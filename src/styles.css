@@ -185,9 +185,8 @@
     0 0 80px oklch(0.78 0.2 305 / 0.5),
     inset 0 -8px 16px oklch(0.5 0.22 320 / 0.35),
     inset 0 6px 12px oklch(1 0 0 / 0.6);
-  animation-name: bubble-rise, bubble-shimmer;
-  animation-duration: var(--bubble-dur, 10s), 1.6s;
-  animation-iteration-count: 1, infinite;
+  animation: bubble-rise var(--rise-dur, 10s) linear forwards;
+
 }
 .bubble-pop {
   animation: bubble-pop 0.35s ease-out forwards !important;
