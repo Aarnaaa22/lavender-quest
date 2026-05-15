@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AmbientBackground } from "@/components/AmbientBackground";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { LEVELS, TOTAL_LEVELS, type Level } from "@/lib/levels";
-import { completeLevel, loadProgress, resetProgress, type Progress } from "@/lib/storage";
+import { loadProgress, resetProgress, type Progress } from "@/lib/storage";
 import islandImg from "@/assets/lavender-island.jpg";
 
 export const Route = createFileRoute("/map")({
@@ -35,11 +36,11 @@ function MapPage() {
   const isUnlocked = (id: number) => id <= progress.currentLevel;
   const isDone = (id: number) => progress.completed.includes(id);
 
-  function onComplete(id: number) {
-    const next = completeLevel(id, TOTAL_LEVELS);
-    setProgress(next);
-    setOpenLevel(null);
-  }
+  // Re-load progress when modal closes (so completions from /game/$id reflect)
+  useEffect(() => {
+    if (!openLevel) setProgress(loadProgress());
+  }, [openLevel]);
+
 
   function onReset() {
     setProgress(resetProgress());
@@ -174,7 +175,6 @@ function MapPage() {
           level={openLevel}
           alreadyDone={isDone(openLevel.id)}
           onClose={() => setOpenLevel(null)}
-          onComplete={() => onComplete(openLevel.id)}
         />
       )}
     </main>
@@ -185,13 +185,12 @@ function GameModal({
   level,
   alreadyDone,
   onClose,
-  onComplete,
 }: {
   level: Level;
   alreadyDone: boolean;
   onClose: () => void;
-  onComplete: () => void;
 }) {
+  const isAvailable = level.id === 1;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-violet-deep/40 backdrop-blur-md animate-[fade-up_0.3s_ease-out]"
@@ -219,17 +218,20 @@ function GameModal({
         <h2 className="mt-2 text-3xl font-bold text-gradient">{level.game}</h2>
         <p className="mt-3 text-sm text-muted-foreground">{level.description}</p>
 
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-blossom/30 px-4 py-1.5 text-xs font-semibold text-violet-deep">
-          🚧 Coming soon — game in development
-        </div>
+        {!isAvailable && (
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-blossom/30 px-4 py-1.5 text-xs font-semibold text-violet-deep">
+            🚧 Coming soon — game in development
+          </div>
+        )}
 
         <div className="mt-7 flex flex-col gap-3">
-          <button
-            onClick={onComplete}
+          <Link
+            to="/game/$id"
+            params={{ id: String(level.id) }}
             className="w-full rounded-full bg-button-grad px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-glow hover:scale-[1.02] active:scale-95 transition-transform"
           >
-            {alreadyDone ? "Replay (mark complete)" : "Simulate complete →"}
-          </button>
+            {isAvailable ? (alreadyDone ? "Replay level →" : "Play now →") : "Peek inside →"}
+          </Link>
           <button
             onClick={onClose}
             className="w-full rounded-full glass px-6 py-3 text-sm font-semibold text-violet-deep hover:scale-[1.02] transition-transform"
