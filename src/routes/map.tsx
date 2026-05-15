@@ -36,11 +36,11 @@ function MapPage() {
   const isUnlocked = (id: number) => id <= progress.currentLevel;
   const isDone = (id: number) => progress.completed.includes(id);
 
-  function onComplete(id: number) {
-    const next = completeLevel(id, TOTAL_LEVELS);
-    setProgress(next);
-    setOpenLevel(null);
-  }
+  // Re-load progress when modal closes (so completions from /game/$id reflect)
+  useEffect(() => {
+    if (!openLevel) setProgress(loadProgress());
+  }, [openLevel]);
+
 
   function onReset() {
     setProgress(resetProgress());
