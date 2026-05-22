@@ -47,14 +47,19 @@ function GamePage() {
     );
   }
 
-  // Only level 1 is the Bubble Beach game; others show coming soon
-  if (levelId !== 1) {
-    return <ComingSoon levelName={level.name} game={level.game} />;
+  if (levelId === 1) {
+    return <BubbleBeach levelId={levelId} onWin={() => {
+      completeLevel(levelId, TOTAL_LEVELS);
+    }} onReturn={() => navigate({ to: "/map" })} />;
   }
 
-  return <BubbleBeach levelId={levelId} onWin={() => {
-    completeLevel(levelId, TOTAL_LEVELS);
-  }} onReturn={() => navigate({ to: "/map" })} />;
+  if (levelId === 2) {
+    return <PetalMeadow levelId={levelId} onWin={() => {
+      completeLevel(levelId, TOTAL_LEVELS);
+    }} onReturn={() => navigate({ to: "/map" })} />;
+  }
+
+  return <ComingSoon levelName={level.name} game={level.game} />;
 }
 
 function ComingSoon({ levelName, game }: { levelName: string; game: string }) {
