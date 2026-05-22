@@ -287,3 +287,117 @@
 @keyframes dash {
   to { stroke-dashoffset: -200; }
 }
+
+/* Petal Meadow */
+.petal-meadow-bg {
+  background:
+    radial-gradient(ellipse at 20% 10%, oklch(0.9 0.1 320 / 0.6), transparent 55%),
+    radial-gradient(ellipse at 80% 20%, oklch(0.85 0.13 285 / 0.55), transparent 55%),
+    radial-gradient(ellipse at 50% 100%, oklch(0.78 0.15 300 / 0.55), transparent 60%),
+    var(--gradient-sky);
+}
+.grass-1 { animation: wave-shift 11s ease-in-out infinite; transform-origin: center; }
+.grass-2 { animation: wave-shift 14s ease-in-out infinite reverse; transform-origin: center; }
+
+.petal-float {
+  position: absolute;
+  animation-name: petal-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+  opacity: 0.85;
+  text-shadow: 0 0 8px oklch(0.9 0.15 320 / 0.6);
+}
+@keyframes petal-drift {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.9; }
+  90%  { opacity: 0.9; }
+  100% { transform: translate(40px, 120vh) rotate(360deg); opacity: 0; }
+}
+
+.petal-card {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  perspective: 800px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+}
+.petal-card:disabled { cursor: default; }
+.petal-card:hover:not(:disabled) .petal-card-inner {
+  box-shadow: 0 0 0 2px oklch(0.85 0.18 320 / 0.7), var(--shadow-soft);
+}
+.petal-card-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-soft);
+}
+.petal-card.is-flipped .petal-card-inner {
+  transform: rotateY(180deg);
+}
+.petal-card.is-shake {
+  animation: card-shake 0.5s ease-in-out;
+}
+.petal-card.is-matched .petal-card-inner {
+  box-shadow: 0 0 0 2px oklch(0.85 0.2 320 / 0.85), 0 0 30px oklch(0.85 0.2 320 / 0.6);
+  animation: card-match-glow 1.2s ease-out;
+}
+@keyframes card-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+@keyframes card-match-glow {
+  0%   { box-shadow: 0 0 0 0 oklch(0.9 0.2 320 / 0.9); }
+  100% { box-shadow: 0 0 0 24px oklch(0.9 0.2 320 / 0), 0 0 30px oklch(0.85 0.2 320 / 0.6); }
+}
+.petal-card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid oklch(1 0 0 / 0.5);
+}
+.petal-card-back {
+  background:
+    radial-gradient(circle at 30% 25%, oklch(1 0 0 / 0.3), transparent 50%),
+    linear-gradient(135deg, oklch(0.65 0.18 295), oklch(0.55 0.2 320));
+  color: oklch(1 0 0 / 0.85);
+}
+.petal-card-back-emblem {
+  font-size: 1.6rem;
+  filter: drop-shadow(0 2px 6px oklch(0 0 0 / 0.3));
+}
+.petal-card-back::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 14px;
+  border: 1px dashed oklch(1 0 0 / 0.35);
+}
+.petal-card-front {
+  transform: rotateY(180deg);
+}
+.petal-card-emoji {
+  font-size: clamp(1.5rem, 6vw, 2.4rem);
+  filter: drop-shadow(0 2px 6px oklch(0 0 0 / 0.25));
+}
+.dark .petal-card-back {
+  background:
+    radial-gradient(circle at 30% 25%, oklch(1 0 0 / 0.2), transparent 50%),
+    linear-gradient(135deg, oklch(0.45 0.18 295), oklch(0.35 0.2 320));
+}
