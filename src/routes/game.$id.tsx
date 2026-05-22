@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { LEVELS, TOTAL_LEVELS } from "@/lib/levels";
 import { completeLevel } from "@/lib/storage";
+import PetalMeadow from "@/components/games/PetalMeadow";
 
 export const Route = createFileRoute("/game/$id")({
   head: ({ params }) => ({
