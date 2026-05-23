@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { LEVELS, TOTAL_LEVELS } from "@/lib/levels";
 import { completeLevel } from "@/lib/storage";
 import PetalMeadow from "@/components/games/PetalMeadow";
+import ButterflyDrift from "@/components/games/ButterflyDrift";
 
 export const Route = createFileRoute("/game/$id")({
   head: ({ params }) => ({
@@ -55,6 +56,12 @@ function GamePage() {
 
   if (levelId === 2) {
     return <PetalMeadow levelId={levelId} onWin={() => {
+      completeLevel(levelId, TOTAL_LEVELS);
+    }} onReturn={() => navigate({ to: "/map" })} />;
+  }
+
+  if (levelId === 3) {
+    return <ButterflyDrift levelId={levelId} onWin={() => {
       completeLevel(levelId, TOTAL_LEVELS);
     }} onReturn={() => navigate({ to: "/map" })} />;
   }
