@@ -18,7 +18,8 @@ const TARGET_SCORE = 22;
 const LANES = 3;
 const BASE_SPEED = 260; // px/s
 const SPAWN_BASE = 780; // ms between spawns
-const JUMP_MS = 620;
+const JUMP_MS = 780;
+const JUMP_LIFT = 72;
 
 export default function BerryRush({
   levelId,
