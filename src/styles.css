@@ -220,6 +220,40 @@
   0%   { transform: scale(0.2); opacity: 1; }
   100% { transform: scale(2.5); opacity: 0; }
 }
+.bubble-bomb {
+  background:
+    radial-gradient(circle at 35% 30%, oklch(0.95 0.05 30 / 0.9), oklch(0.55 0.22 25 / 0.6) 55%, oklch(0.35 0.18 20 / 0.7));
+  box-shadow:
+    0 0 24px oklch(0.65 0.25 25 / 0.7),
+    0 0 50px oklch(0.55 0.22 15 / 0.5),
+    inset 0 -6px 12px oklch(0.25 0.15 15 / 0.55),
+    inset 0 4px 10px oklch(1 0 0 / 0.35);
+  animation: bubble-rise var(--rise-dur, 8s) linear forwards, bomb-pulse 0.9s ease-in-out infinite;
+}
+.bubble-spike {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6em;
+  filter: drop-shadow(0 2px 4px oklch(0.3 0.15 20 / 0.6));
+  pointer-events: none;
+}
+@keyframes bomb-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.25) saturate(1.2); }
+}
+.pop-burst-bomb {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  margin-left: -40px;
+  margin-top: -40px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, oklch(0.95 0.2 30 / 0.95), oklch(0.6 0.25 20 / 0.6) 40%, transparent 70%);
+  animation: pop-burst 0.7s ease-out forwards;
+}
 .wave-1 { animation: wave-shift 9s ease-in-out infinite; transform-origin: center; }
 .wave-2 { animation: wave-shift 12s ease-in-out infinite reverse; transform-origin: center; }
 @keyframes wave-shift {
