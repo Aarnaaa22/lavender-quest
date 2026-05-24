@@ -4,6 +4,7 @@ import { LEVELS, TOTAL_LEVELS } from "@/lib/levels";
 import { completeLevel } from "@/lib/storage";
 import PetalMeadow from "@/components/games/PetalMeadow";
 import ButterflyDrift from "@/components/games/ButterflyDrift";
+import BerryRush from "@/components/games/BerryRush";
 
 export const Route = createFileRoute("/game/$id")({
   head: ({ params }) => ({
@@ -62,6 +63,12 @@ function GamePage() {
 
   if (levelId === 3) {
     return <ButterflyDrift levelId={levelId} onWin={() => {
+      completeLevel(levelId, TOTAL_LEVELS);
+    }} onReturn={() => navigate({ to: "/map" })} />;
+  }
+
+  if (levelId === 4) {
+    return <BerryRush levelId={levelId} onWin={() => {
       completeLevel(levelId, TOTAL_LEVELS);
     }} onReturn={() => navigate({ to: "/map" })} />;
   }
