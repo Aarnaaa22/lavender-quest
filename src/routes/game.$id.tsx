@@ -4,6 +4,7 @@ import { LEVELS, TOTAL_LEVELS } from "@/lib/levels";
 import { completeLevel } from "@/lib/storage";
 import PetalMeadow from "@/components/games/PetalMeadow";
 import ButterflyDrift from "@/components/games/ButterflyDrift";
+import BerryRush from "@/components/games/BerryRush";
 
 export const Route = createFileRoute("/game/$id")({
   head: ({ params }) => ({
