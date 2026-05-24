@@ -76,6 +76,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "A dreamy interactive treasure hunt across a soft lavender island." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Lavender Adventure" },
+      { name: "twitter:title", content: "Lavender Adventure" },
+      { property: "og:description", content: "A dreamy interactive treasure hunt across a soft lavender island." },
+      { name: "twitter:description", content: "A dreamy interactive treasure hunt across a soft lavender island." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c2febfd5-ea53-484f-9b95-98400dcc5b26/id-preview-606b6b55--85246d74-c32d-4aa9-9239-4852f40da8fa.lovable.app-1779625908508.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c2febfd5-ea53-484f-9b95-98400dcc5b26/id-preview-606b6b55--85246d74-c32d-4aa9-9239-4852f40da8fa.lovable.app-1779625908508.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
