@@ -512,6 +512,17 @@ export default function BerryRush({
           0%, 100% { transform: translateY(0) rotate(-3deg); }
           50% { transform: translateY(-4px) rotate(3deg); }
         }
+        @keyframes br-jump {
+          0%   { transform: translateY(0) scaleY(0.9) scaleX(1.05); }
+          15%  { transform: translateY(-${JUMP_LIFT}px) scaleY(1.1) scaleX(0.92) rotate(-10deg); }
+          50%  { transform: translateY(-${JUMP_LIFT}px) rotate(0deg); }
+          85%  { transform: translateY(-${JUMP_LIFT * 0.4}px) rotate(8deg); }
+          100% { transform: translateY(0) scaleY(0.95) scaleX(1.05); }
+        }
+        @keyframes br-shadow {
+          0%, 100% { transform: scaleX(1); opacity: 0.6; }
+          50%      { transform: scaleX(0.55); opacity: 0.3; }
+        }
         @keyframes br-bob {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
