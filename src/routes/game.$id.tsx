@@ -67,6 +67,12 @@ function GamePage() {
     }} onReturn={() => navigate({ to: "/map" })} />;
   }
 
+  if (levelId === 4) {
+    return <BerryRush levelId={levelId} onWin={() => {
+      completeLevel(levelId, TOTAL_LEVELS);
+    }} onReturn={() => navigate({ to: "/map" })} />;
+  }
+
   return <ComingSoon levelName={level.name} game={level.game} />;
 }
 
