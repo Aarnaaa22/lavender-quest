@@ -5,6 +5,7 @@ import { completeLevel } from "@/lib/storage";
 import PetalMeadow from "@/components/games/PetalMeadow";
 import ButterflyDrift from "@/components/games/ButterflyDrift";
 import BerryRush from "@/components/games/BerryRush";
+import GameIntro from "@/components/games/GameIntro";
 
 export const Route = createFileRoute("/game/$id")({
   head: ({ params }) => ({
@@ -18,23 +19,84 @@ export const Route = createFileRoute("/game/$id")({
 
 type Bubble = {
   id: number;
-  x: number; // %
+  x: number;
   size: number;
   drift: number;
   duration: number;
   rare: boolean;
+  bomb: boolean;
   popped: boolean;
 };
 
-type Pop = { id: number; x: number; y: number };
+type Pop = { id: number; x: number; y: number; bomb?: boolean };
 
-const TARGET = 15;
+const TARGET = 25;
+const BB_TIME = 35;
+
+const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
+  1: {
+    level: 1, title: "Bubble Beach", emoji: "🫧",
+    tagline: "Pop bubbles. Dodge the spiky ones.",
+    rules: [
+      "Tap bubbles to pop them and earn points.",
+      "Glowing rare bubbles are worth 3 points.",
+      "🦔 Spiny urchin bubbles end the run instantly — DO NOT pop them.",
+    ],
+    controls: ["Tap / click bubbles"],
+    goal: `Reach ${TARGET} points before time runs out.`,
+    onStart: () => {},
+  },
+  2: {
+    level: 2, title: "Petal Meadow", emoji: "🌸",
+    tagline: "Memory under pressure.",
+    rules: [
+      "Cards are revealed briefly — memorize them.",
+      "Flip two cards to find matching flowers.",
+      "Wrong matches cost 2 seconds.",
+      "Cards subtly shift to confuse you.",
+    ],
+    controls: ["Click cards"],
+    goal: "Match all 10 pairs before time runs out.",
+    onStart: () => {},
+  },
+  3: {
+    level: 3, title: "Butterfly Drift", emoji: "🦋",
+    tagline: "Reaction & tracking.",
+    rules: [
+      "Catch butterflies as they drift across the garden.",
+      "Glowing rare butterflies fly faster but score 3.",
+    ],
+    controls: ["Tap / click butterflies"],
+    goal: "Catch 13 butterflies before time runs out.",
+    onStart: () => {},
+  },
+  4: {
+    level: 4, title: "Berry Rush", emoji: "🍇",
+    tagline: "Movement & control.",
+    rules: [
+      "You auto-run along three lanes.",
+      "Collect 🍇 berries (and rare 🫐 for 3 pts).",
+      "Avoid 🪨 rocks, 🌿 bushes, and 💧 puddles.",
+      "Jump to leap over rocks & bushes (puddles need lane change).",
+    ],
+    controls: [
+      "← → arrows or swipe to change lane",
+      "Space / ↑ / swipe up / tap to jump",
+    ],
+    goal: "Hit the score target OR survive the timer with health left.",
+    onStart: () => {},
+  },
+};
 
 function GamePage() {
   const { id } = Route.useParams();
   const levelId = Number(id);
   const level = LEVELS.find((l) => l.id === levelId);
   const navigate = useNavigate();
+  const [started, setStarted] = useState(false);
+
+  // Reset intro when switching levels
+  useEffect(() => { setStarted(false); }, [levelId]);
 
   if (!level) {
     return (
@@ -49,29 +111,18 @@ function GamePage() {
     );
   }
 
-  if (levelId === 1) {
-    return <BubbleBeach levelId={levelId} onWin={() => {
-      completeLevel(levelId, TOTAL_LEVELS);
-    }} onReturn={() => navigate({ to: "/map" })} />;
+  const intro = INTROS[levelId];
+  if (!started && intro) {
+    return <GameIntro {...intro} onStart={() => setStarted(true)} />;
   }
 
-  if (levelId === 2) {
-    return <PetalMeadow levelId={levelId} onWin={() => {
-      completeLevel(levelId, TOTAL_LEVELS);
-    }} onReturn={() => navigate({ to: "/map" })} />;
-  }
+  const onWin = () => completeLevel(levelId, TOTAL_LEVELS);
+  const onReturn = () => navigate({ to: "/map" });
 
-  if (levelId === 3) {
-    return <ButterflyDrift levelId={levelId} onWin={() => {
-      completeLevel(levelId, TOTAL_LEVELS);
-    }} onReturn={() => navigate({ to: "/map" })} />;
-  }
-
-  if (levelId === 4) {
-    return <BerryRush levelId={levelId} onWin={() => {
-      completeLevel(levelId, TOTAL_LEVELS);
-    }} onReturn={() => navigate({ to: "/map" })} />;
-  }
+  if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+  if (levelId === 2) return <PetalMeadow levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+  if (levelId === 3) return <ButterflyDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+  if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
 
   return <ComingSoon levelName={level.name} game={level.game} />;
 }
@@ -96,34 +147,56 @@ function BubbleBeach({ levelId, onWin, onReturn }: { levelId: number; onWin: () 
   const [score, setScore] = useState(0);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [pops, setPops] = useState<Pop[]>([]);
-  const [won, setWon] = useState(false);
+  const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
+  const [timeLeft, setTimeLeft] = useState(BB_TIME);
   const idRef = useRef(0);
-  const wonRef = useRef(false);
+  const doneRef = useRef(false);
 
   // Spawn bubbles
   useEffect(() => {
-    if (won) return;
+    if (status !== "playing") return;
     const interval = setInterval(() => {
       setBubbles((prev) => {
-        // cap to avoid clutter
-        if (prev.length > 18) return prev;
-        const rare = Math.random() < 0.08;
+        if (prev.length > 22) return prev;
+        const roll = Math.random();
+        const bomb = roll < 0.14;
+        const rare = !bomb && roll > 0.92;
         const next: Bubble = {
           id: idRef.current++,
           x: 5 + Math.random() * 90,
-          size: rare ? 70 + Math.random() * 20 : 40 + Math.random() * 50,
+          size: bomb ? 55 + Math.random() * 25 : rare ? 70 + Math.random() * 20 : 40 + Math.random() * 50,
           drift: (Math.random() - 0.5) * 30,
-          duration: 8 + Math.random() * 6,
+          duration: bomb ? 6 + Math.random() * 3 : 8 + Math.random() * 6,
           rare,
+          bomb,
           popped: false,
         };
         return [...prev, next];
       });
-    }, 650);
+    }, 520);
     return () => clearInterval(interval);
-  }, [won]);
+  }, [status]);
 
-  // Cleanup off-screen bubbles
+  // Timer
+  useEffect(() => {
+    if (status !== "playing") return;
+    const t = setInterval(() => {
+      setTimeLeft((s) => {
+        if (s <= 1) {
+          clearInterval(t);
+          if (!doneRef.current) {
+            doneRef.current = true;
+            setStatus("lost");
+          }
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [status]);
+
+  // Cleanup popped
   useEffect(() => {
     const t = setInterval(() => {
       setBubbles((prev) => prev.filter((b) => !b.popped));
@@ -132,31 +205,46 @@ function BubbleBeach({ levelId, onWin, onReturn }: { levelId: number; onWin: () 
   }, []);
 
   const pop = useCallback((b: Bubble, e: React.MouseEvent | React.TouchEvent) => {
-    if (b.popped || wonRef.current) return;
+    if (b.popped || doneRef.current) return;
     setBubbles((prev) => prev.map((p) => (p.id === b.id ? { ...p, popped: true } : p)));
     const target = e.currentTarget as HTMLElement;
     const rect = target.getBoundingClientRect();
     const popId = Date.now() + Math.random();
-    setPops((prev) => [...prev, { id: popId, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }]);
+    setPops((prev) => [...prev, { id: popId, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, bomb: b.bomb }]);
     setTimeout(() => setPops((prev) => prev.filter((p) => p.id !== popId)), 700);
+
+    if (b.bomb) {
+      doneRef.current = true;
+      setStatus("lost");
+      return;
+    }
 
     setScore((s) => {
       const inc = b.rare ? 3 : 1;
       const next = s + inc;
-      if (next >= TARGET && !wonRef.current) {
-        wonRef.current = true;
-        setWon(true);
+      if (next >= TARGET && !doneRef.current) {
+        doneRef.current = true;
+        setStatus("won");
         onWin();
       }
       return Math.min(next, TARGET);
     });
   }, [onWin]);
 
+  const reset = () => {
+    setScore(0);
+    setBubbles([]);
+    setPops([]);
+    setTimeLeft(BB_TIME);
+    setStatus("playing");
+    doneRef.current = false;
+  };
+
   const progress = Math.min(100, (score / TARGET) * 100);
+  const timeLow = timeLeft <= 10;
 
   return (
     <main className="relative min-h-screen overflow-hidden bubble-beach-bg">
-      {/* Sparkles */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         {Array.from({ length: 30 }).map((_, i) => (
           <span
@@ -175,7 +263,6 @@ function BubbleBeach({ levelId, onWin, onReturn }: { levelId: number; onWin: () 
         ))}
       </div>
 
-      {/* Waves at bottom */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-40 z-0">
         <svg viewBox="0 0 1440 200" preserveAspectRatio="none" className="absolute inset-0 size-full opacity-60">
           <path className="wave-1" d="M0,100 C360,160 1080,40 1440,100 L1440,200 L0,200 Z" fill="oklch(0.85 0.1 320 / 0.6)" />
@@ -185,7 +272,6 @@ function BubbleBeach({ levelId, onWin, onReturn }: { levelId: number; onWin: () 
         </svg>
       </div>
 
-      {/* Top bar */}
       <header className="relative z-20 flex items-center justify-between gap-3 p-4 sm:p-6">
         <Link
           to="/map"
@@ -193,17 +279,19 @@ function BubbleBeach({ levelId, onWin, onReturn }: { levelId: number; onWin: () 
         >
           ← Map
         </Link>
-        <div className="flex items-center gap-3">
-          <div className="rounded-full glass px-4 py-2 shadow-soft">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="rounded-full glass px-3 sm:px-4 py-2 shadow-soft">
             <span className="text-xs font-semibold text-violet-deep/70">Score </span>
             <span className="text-sm font-bold text-violet-deep tabular-nums">{score}</span>
-            <span className="text-xs font-semibold text-violet-deep/70"> / Goal </span>
-            <span className="text-sm font-bold text-violet-deep tabular-nums">{TARGET}</span>
+            <span className="text-xs font-semibold text-violet-deep/70">/{TARGET}</span>
+          </div>
+          <div className={`rounded-full glass px-3 sm:px-4 py-2 shadow-soft ${timeLow ? "ring-2 ring-rose-400/70 animate-pulse" : ""}`}>
+            <span className="text-xs font-semibold text-violet-deep/70">⏱ </span>
+            <span className={`text-sm font-bold tabular-nums ${timeLow ? "text-rose-500" : "text-violet-deep"}`}>{timeLeft}s</span>
           </div>
         </div>
       </header>
 
-      {/* Progress */}
       <div className="relative z-20 mx-auto max-w-md px-6">
         <div className="h-2 rounded-full glass overflow-hidden">
           <div
@@ -212,20 +300,19 @@ function BubbleBeach({ levelId, onWin, onReturn }: { levelId: number; onWin: () 
           />
         </div>
         <p className="mt-2 text-center text-xs font-semibold text-violet-deep/70 tracking-wide">
-          Level {levelId} · Bubble Beach 🫧
+          Level {levelId} · Bubble Beach 🫧 — avoid the spiny ones!
         </p>
       </div>
 
-      {/* Bubbles */}
       <div className="absolute inset-0 z-10 overflow-hidden">
         {bubbles.map((b) => (
           <button
             key={b.id}
             onClick={(e) => pop(b, e)}
             onTouchStart={(e) => pop(b, e)}
-            disabled={b.popped}
-            aria-label={b.rare ? "Rare glowing bubble" : "Bubble"}
-            className={`bubble ${b.popped ? "bubble-pop" : ""} ${b.rare ? "bubble-rare" : ""}`}
+            disabled={b.popped || status !== "playing"}
+            aria-label={b.bomb ? "Spiny bubble — danger" : b.rare ? "Rare glowing bubble" : "Bubble"}
+            className={`bubble ${b.popped ? "bubble-pop" : ""} ${b.rare ? "bubble-rare" : ""} ${b.bomb ? "bubble-bomb" : ""}`}
             style={{
               left: `${b.x}%`,
               width: b.size,
@@ -234,39 +321,47 @@ function BubbleBeach({ levelId, onWin, onReturn }: { levelId: number; onWin: () 
               ["--drift" as string]: `${b.drift}vw`,
             }}
           >
-            <span className="bubble-shine" />
+            {b.bomb ? <span className="bubble-spike">🦔</span> : <span className="bubble-shine" />}
           </button>
         ))}
       </div>
 
-      {/* Pop bursts (fixed positioning relative to viewport) */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-30">
         {pops.map((p) => (
           <span
             key={p.id}
-            className="pop-burst"
+            className={p.bomb ? "pop-burst-bomb" : "pop-burst"}
             style={{ left: p.x, top: p.y }}
           />
         ))}
       </div>
 
-      {/* Win modal */}
-      {won && (
+      {status !== "playing" && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-violet-deep/40 backdrop-blur-md animate-[fade-up_0.4s_ease-out]">
-          <div className="relative w-full max-w-md rounded-[2rem] glass shadow-glow p-10 text-center animate-[zoom-in_0.5s_cubic-bezier(0.16,1,0.3,1)]">
-            <div className="mx-auto size-24 rounded-full bg-button-grad flex items-center justify-center text-5xl shadow-glow animate-float">
-              💜
+          <div className="relative w-full max-w-md rounded-[2rem] glass shadow-glow p-8 sm:p-10 text-center animate-[zoom-in_0.5s_cubic-bezier(0.16,1,0.3,1)]">
+            <div className={`mx-auto size-24 rounded-full flex items-center justify-center text-5xl shadow-glow animate-float ${status === "won" ? "bg-button-grad" : "bg-gradient-to-br from-rose-400 to-pink-500"}`}>
+              {status === "won" ? "💜" : "🦔"}
             </div>
-            <h2 className="mt-6 text-4xl font-bold text-gradient">Level Complete</h2>
+            <h2 className="mt-6 text-3xl sm:text-4xl font-bold text-gradient">
+              {status === "won" ? "Level Complete" : "Ouch!"}
+            </h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              Beautiful! You popped your way through the bubble beach.
+              {status === "won"
+                ? `You popped ${score} points worth of bubbles.`
+                : timeLeft === 0
+                  ? "Time's up — try again!"
+                  : "You popped a spiny one. Watch out for those!"}
             </p>
-            <button
-              onClick={onReturn}
-              className="mt-7 w-full rounded-full bg-button-grad px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-glow hover:scale-[1.02] active:scale-95 transition-transform"
-            >
-              Return to Map →
-            </button>
+            <div className="mt-6 flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={reset}
+                className="flex-1 rounded-full glass px-6 py-3 text-sm font-bold text-violet-deep hover:scale-[1.02] active:scale-95 transition-transform shadow-soft"
+              >↺ Replay</button>
+              <button
+                onClick={onReturn}
+                className="flex-1 rounded-full bg-button-grad px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow hover:scale-[1.02] active:scale-95 transition-transform"
+              >Return to Map →</button>
+            </div>
           </div>
         </div>
       )}

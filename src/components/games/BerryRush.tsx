@@ -18,7 +18,8 @@ const TARGET_SCORE = 22;
 const LANES = 3;
 const BASE_SPEED = 260; // px/s
 const SPAWN_BASE = 780; // ms between spawns
-const JUMP_MS = 620;
+const JUMP_MS = 780;
+const JUMP_LIFT = 72;
 
 export default function BerryRush({
   levelId,
@@ -379,11 +380,11 @@ export default function BerryRush({
 
           {/* Character */}
           <div
-            className="absolute transition-[top] duration-200 ease-out"
+            className="absolute"
             style={{
               left: 60,
-              top: laneY(lane) - 8 - (jumping ? 36 : 0),
-              transition: "top 0.25s cubic-bezier(0.16,1,0.3,1)",
+              top: laneY(lane) - 8,
+              transition: "top 0.22s cubic-bezier(0.16,1,0.3,1)",
             }}
           >
             <div
@@ -391,7 +392,10 @@ export default function BerryRush({
               style={{
                 background:
                   "radial-gradient(circle at 35% 30%, oklch(0.98 0.04 305), oklch(0.85 0.12 300) 70%, oklch(0.7 0.15 295))",
-                animation: jumping ? "none" : "br-run 0.4s ease-in-out infinite",
+                animation: jumping
+                  ? `br-jump ${JUMP_MS}ms cubic-bezier(0.33,0.9,0.4,1) forwards`
+                  : "br-run 0.4s ease-in-out infinite",
+                transformOrigin: "center bottom",
               }}
             >
               🐰
@@ -399,15 +403,16 @@ export default function BerryRush({
             {/* Shadow */}
             <div className="absolute left-1/2 -translate-x-1/2 rounded-full"
               style={{
-                top: 60 + (jumping ? 36 : 0),
-                width: jumping ? 28 : 44,
+                top: 60,
+                width: 44,
                 height: 6,
                 background: "oklch(0.3 0.08 295 / 0.4)",
                 filter: "blur(3px)",
-                transition: "all 0.25s",
+                animation: jumping ? `br-shadow ${JUMP_MS}ms ease-in-out forwards` : undefined,
               }}
             />
           </div>
+
 
           {/* Entities */}
           {entities.map((e) => {
@@ -506,6 +511,17 @@ export default function BerryRush({
         @keyframes br-run {
           0%, 100% { transform: translateY(0) rotate(-3deg); }
           50% { transform: translateY(-4px) rotate(3deg); }
+        }
+        @keyframes br-jump {
+          0%   { transform: translateY(0) scaleY(0.9) scaleX(1.05); }
+          15%  { transform: translateY(-${JUMP_LIFT}px) scaleY(1.1) scaleX(0.92) rotate(-10deg); }
+          50%  { transform: translateY(-${JUMP_LIFT}px) rotate(0deg); }
+          85%  { transform: translateY(-${JUMP_LIFT * 0.4}px) rotate(8deg); }
+          100% { transform: translateY(0) scaleY(0.95) scaleX(1.05); }
+        }
+        @keyframes br-shadow {
+          0%, 100% { transform: scaleX(1); opacity: 0.6; }
+          50%      { transform: scaleX(0.55); opacity: 0.3; }
         }
         @keyframes br-bob {
           0%, 100% { transform: translateY(0); }
