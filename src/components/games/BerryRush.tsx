@@ -380,11 +380,11 @@ export default function BerryRush({
 
           {/* Character */}
           <div
-            className="absolute transition-[top] duration-200 ease-out"
+            className="absolute"
             style={{
               left: 60,
-              top: laneY(lane) - 8 - (jumping ? 36 : 0),
-              transition: "top 0.25s cubic-bezier(0.16,1,0.3,1)",
+              top: laneY(lane) - 8,
+              transition: "top 0.22s cubic-bezier(0.16,1,0.3,1)",
             }}
           >
             <div
@@ -392,7 +392,10 @@ export default function BerryRush({
               style={{
                 background:
                   "radial-gradient(circle at 35% 30%, oklch(0.98 0.04 305), oklch(0.85 0.12 300) 70%, oklch(0.7 0.15 295))",
-                animation: jumping ? "none" : "br-run 0.4s ease-in-out infinite",
+                animation: jumping
+                  ? `br-jump ${JUMP_MS}ms cubic-bezier(0.33,0.9,0.4,1) forwards`
+                  : "br-run 0.4s ease-in-out infinite",
+                transformOrigin: "center bottom",
               }}
             >
               🐰
@@ -400,15 +403,16 @@ export default function BerryRush({
             {/* Shadow */}
             <div className="absolute left-1/2 -translate-x-1/2 rounded-full"
               style={{
-                top: 60 + (jumping ? 36 : 0),
-                width: jumping ? 28 : 44,
+                top: 60,
+                width: 44,
                 height: 6,
                 background: "oklch(0.3 0.08 295 / 0.4)",
                 filter: "blur(3px)",
-                transition: "all 0.25s",
+                animation: jumping ? `br-shadow ${JUMP_MS}ms ease-in-out forwards` : undefined,
               }}
             />
           </div>
+
 
           {/* Entities */}
           {entities.map((e) => {
