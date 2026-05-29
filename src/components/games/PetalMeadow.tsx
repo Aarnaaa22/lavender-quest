@@ -244,8 +244,9 @@ export default function PetalMeadow({
       </div>
 
       {/* Grid */}
-      <div className="relative z-20 mx-auto mt-4 sm:mt-6 px-3 sm:px-6 pb-32 max-w-3xl">
-        <div className="grid grid-cols-5 gap-2 sm:gap-3">
+      <div className="relative z-20 mx-auto mt-3 sm:mt-4 px-3 sm:px-6 pb-8 max-w-xl">
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+
           {deck.map((card, idx) => {
             const isFlipped = peeking || flipped.includes(card.id) || matched.has(card.pairId);
             const isMatched = matched.has(card.pairId);
