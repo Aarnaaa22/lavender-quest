@@ -521,3 +521,34 @@
 }
 @keyframes bf-sparkle { 0%,100% { opacity: 1; } }
 
+
+/* Lotus Drift (Level 5) */
+.lotus-drift-bg {
+  background:
+    radial-gradient(ellipse at 50% 35%, oklch(0.88 0.1 25 / 0.45), transparent 55%),
+    linear-gradient(180deg,
+      oklch(0.32 0.12 295) 0%,
+      oklch(0.45 0.16 310) 35%,
+      oklch(0.65 0.18 320) 60%,
+      oklch(0.78 0.14 295) 100%);
+}
+.dark .lotus-drift-bg {
+  background:
+    radial-gradient(ellipse at 50% 35%, oklch(0.78 0.14 25 / 0.35), transparent 55%),
+    linear-gradient(180deg,
+      oklch(0.18 0.08 295) 0%,
+      oklch(0.28 0.12 310) 40%,
+      oklch(0.4 0.15 320) 70%,
+      oklch(0.5 0.14 295) 100%);
+}
+@keyframes ld-wave-a { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-30px); } }
+@keyframes ld-wave-b { 0%,100% { transform: translateX(0); } 50% { transform: translateX(35px); } }
+@keyframes ld-wave-c { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-20px); } }
+.ld-wave-a { animation: ld-wave-a 6s ease-in-out infinite; transform-origin: center; }
+.ld-wave-b { animation: ld-wave-b 4.5s ease-in-out infinite; transform-origin: center; }
+.ld-wave-c { animation: ld-wave-c 7.5s ease-in-out infinite; transform-origin: center; }
+@keyframes lotus-bob {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.lotus-bob { animation: lotus-bob 2.4s ease-in-out infinite; }
