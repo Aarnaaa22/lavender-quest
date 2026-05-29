@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AmbientBackground } from "@/components/AmbientBackground";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import islandImg from "@/assets/lavender-island.jpg";
 
 export const Route = createFileRoute("/")({
@@ -20,9 +20,6 @@ function Welcome() {
     <main className="relative min-h-screen flex flex-col items-center justify-center px-6 py-12">
       <AmbientBackground />
 
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggle />
-      </div>
 
       <section className="relative z-10 max-w-3xl text-center animate-[fade-up_0.8s_ease-out]">
         <span className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-semibold tracking-widest uppercase text-violet-deep">
