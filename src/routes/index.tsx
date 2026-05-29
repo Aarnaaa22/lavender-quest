@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AmbientBackground } from "@/components/AmbientBackground";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import islandImg from "@/assets/lavender-island.jpg";
 
 export const Route = createFileRoute("/")({
