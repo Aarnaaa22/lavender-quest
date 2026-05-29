@@ -28,7 +28,7 @@ const FLOWERS: FlowerDef[] = [
   { emoji: "✾",  hue: 290, shape: "round",  center: "#e9d5ff" },
 ];
 
-const TOTAL_TIME = 46; // seconds
+const TOTAL_TIME = 65; // seconds
 const PEEK_TIME = 2600; // ms reveal at start
 const WRONG_PENALTY = 2; // seconds
 const FLIP_BACK_DELAY = 650; // ms
