@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AmbientBackground } from "@/components/AmbientBackground";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { LEVELS, TOTAL_LEVELS, type Level } from "@/lib/levels";
 import { loadProgress, resetProgress, type Progress } from "@/lib/storage";
 import islandImg from "@/assets/lavender-island.jpg";
