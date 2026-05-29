@@ -5,6 +5,7 @@ import { completeLevel } from "@/lib/storage";
 import PetalMeadow from "@/components/games/PetalMeadow";
 import ButterflyDrift from "@/components/games/ButterflyDrift";
 import BerryRush from "@/components/games/BerryRush";
+import LotusDrift from "@/components/games/LotusDrift";
 import GameIntro from "@/components/games/GameIntro";
 
 export const Route = createFileRoute("/game/$id")({
@@ -86,6 +87,22 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
     goal: "Hit the score target OR survive the timer with health left.",
     onStart: () => {},
   },
+  5: {
+    level: 5, title: "Lotus Drift", emoji: "🌸",
+    tagline: "Balance & control.",
+    rules: [
+      "Keep the floating lotus inside the glowing safe zone.",
+      "Waves push you constantly — make small, steady adjustments.",
+      "Outside the zone, your balance meter drains.",
+      "Drift past the boundary OR empty the meter = lose.",
+    ],
+    controls: [
+      "← → / A D to steer",
+      "Drag with mouse or finger to glide",
+    ],
+    goal: "Survive 24 seconds of waves with balance to spare.",
+    onStart: () => {},
+  },
 };
 
 function GamePage() {
@@ -123,6 +140,7 @@ function GamePage() {
   if (levelId === 2) return <PetalMeadow levelId={levelId} onWin={onWin} onReturn={onReturn} />;
   if (levelId === 3) return <ButterflyDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
   if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+  if (levelId === 5) return <LotusDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
 
   return <ComingSoon levelName={level.name} game={level.game} />;
 }
