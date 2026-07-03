@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AmbientBackground } from "@/components/AmbientBackground";
 
 import { LEVELS, TOTAL_LEVELS, type Level } from "@/lib/levels";
-import { loadProgress, resetProgress, skipLevel, SKIP_COST, type Progress } from "@/lib/storage";
+import { loadProgress, resetProgress, type Progress } from "@/lib/storage";
 import islandImg from "@/assets/lavender-island.jpg";
 
 export const Route = createFileRoute("/map")({
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/map")({
 });
 
 function MapPage() {
-  const [progress, setProgress] = useState<Progress>({ currentLevel: 1, completed: [], credits: 10 });
+  const [progress, setProgress] = useState<Progress>({ currentLevel: 1, completed: [] });
   const [openLevel, setOpenLevel] = useState<Level | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -60,18 +60,12 @@ function MapPage() {
             {progress.completed.length} / {TOTAL_LEVELS} treasures collected
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full glass px-3 py-2 text-sm font-bold text-violet-deep shadow-soft" title="Credits — earn 3 per level, skip for 5">
-            <span className="text-base leading-none">💎</span>
-            <span className="tabular-nums">{progress.credits}</span>
-          </div>
-          <button
-            onClick={onReset}
-            className="rounded-full glass px-3 py-2 text-xs font-semibold text-violet-deep hover:scale-105 transition-transform"
-          >
-            Reset
-          </button>
-        </div>
+        <button
+          onClick={onReset}
+          className="rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep hover:scale-105 transition-transform"
+        >
+          Reset
+        </button>
       </header>
 
       <div className="relative z-10 max-w-6xl mx-auto">
@@ -180,14 +174,6 @@ function MapPage() {
         <GameModal
           level={openLevel}
           alreadyDone={isDone(openLevel.id)}
-          credits={progress.credits}
-          onSkip={() => {
-            const next = skipLevel(openLevel.id, TOTAL_LEVELS);
-            if (next) {
-              setProgress(next);
-              setOpenLevel(null);
-            }
-          }}
           onClose={() => setOpenLevel(null)}
         />
       )}
@@ -198,18 +184,13 @@ function MapPage() {
 function GameModal({
   level,
   alreadyDone,
-  credits,
-  onSkip,
   onClose,
 }: {
   level: Level;
   alreadyDone: boolean;
-  credits: number;
-  onSkip: () => void;
   onClose: () => void;
 }) {
   const isAvailable = level.id === 1;
-  const canSkip = !alreadyDone && credits >= SKIP_COST;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-violet-deep/40 backdrop-blur-md animate-[fade-up_0.3s_ease-out]"
@@ -251,17 +232,6 @@ function GameModal({
           >
             {isAvailable ? (alreadyDone ? "Replay level →" : "Play now →") : "Peek inside →"}
           </Link>
-          {!alreadyDone && (
-            <button
-              onClick={onSkip}
-              disabled={!canSkip}
-              className="w-full rounded-full glass px-6 py-3 text-sm font-bold text-violet-deep hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              title={canSkip ? `Spend ${SKIP_COST} credits to skip` : `Need ${SKIP_COST} 💎 to skip`}
-            >
-              ⤳ Skip level — {SKIP_COST} 💎
-              {!canSkip && <span className="ml-1 text-xs opacity-70">(need {SKIP_COST})</span>}
-            </button>
-          )}
           <button
             onClick={onClose}
             className="w-full rounded-full glass px-6 py-3 text-sm font-semibold text-violet-deep hover:scale-[1.02] transition-transform"

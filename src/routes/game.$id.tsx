@@ -57,7 +57,7 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
       "Cards subtly shift to confuse you.",
     ],
     controls: ["Click cards"],
-    goal: "Match all 6 pairs before time runs out.",
+    goal: "Match all 10 pairs before time runs out.",
     onStart: () => {},
   },
   3: {
