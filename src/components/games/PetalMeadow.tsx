@@ -14,19 +14,14 @@ type FlowerDef = {
   center: string;
 };
 
-// 10 pairs of subtly different lavender/purple flowers
+// 4 pairs (8 cards) of subtly different lavender/purple flowers
 const FLOWERS: FlowerDef[] = [
   { emoji: "🌸", hue: 295, shape: "round",  center: "#fde68a" },
   { emoji: "🌷", hue: 305, shape: "pointy", center: "#fbcfe8" },
-  { emoji: "💜", hue: 285, shape: "round",  center: "#e9d5ff" },
   { emoji: "🪻", hue: 270, shape: "pointy", center: "#c4b5fd" },
-  { emoji: "🌺", hue: 320, shape: "soft",   center: "#fcd34d" },
   { emoji: "🪷", hue: 310, shape: "round",  center: "#f5d0fe" },
-  { emoji: "❀",  hue: 300, shape: "soft",   center: "#fde68a" },
-  { emoji: "✿",  hue: 280, shape: "pointy", center: "#ddd6fe" },
-  { emoji: "❁",  hue: 330, shape: "soft",   center: "#fbcfe8" },
-  { emoji: "✾",  hue: 290, shape: "round",  center: "#e9d5ff" },
 ];
+
 
 const TOTAL_TIME = 65; // seconds
 const PEEK_TIME = 2600; // ms reveal at start
@@ -244,8 +239,9 @@ export default function PetalMeadow({
       </div>
 
       {/* Grid */}
-      <div className="relative z-20 mx-auto mt-3 sm:mt-4 px-3 sm:px-6 pb-8 max-w-xl">
-        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+      <div className="relative z-20 mx-auto mt-3 sm:mt-4 px-3 sm:px-6 pb-8 max-w-md">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+
 
           {deck.map((card, idx) => {
             const isFlipped = peeking || flipped.includes(card.id) || matched.has(card.pairId);
