@@ -60,12 +60,18 @@ function MapPage() {
             {progress.completed.length} / {TOTAL_LEVELS} treasures collected
           </p>
         </div>
-        <button
-          onClick={onReset}
-          className="rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep hover:scale-105 transition-transform"
-        >
-          Reset
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 rounded-full glass px-3 py-2 text-sm font-bold text-violet-deep shadow-soft" title="Credits — earn 3 per level, skip for 5">
+            <span className="text-base leading-none">💎</span>
+            <span className="tabular-nums">{progress.credits}</span>
+          </div>
+          <button
+            onClick={onReset}
+            className="rounded-full glass px-3 py-2 text-xs font-semibold text-violet-deep hover:scale-105 transition-transform"
+          >
+            Reset
+          </button>
+        </div>
       </header>
 
       <div className="relative z-10 max-w-6xl mx-auto">
