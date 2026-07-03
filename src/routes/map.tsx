@@ -180,6 +180,14 @@ function MapPage() {
         <GameModal
           level={openLevel}
           alreadyDone={isDone(openLevel.id)}
+          credits={progress.credits}
+          onSkip={() => {
+            const next = skipLevel(openLevel.id, TOTAL_LEVELS);
+            if (next) {
+              setProgress(next);
+              setOpenLevel(null);
+            }
+          }}
           onClose={() => setOpenLevel(null)}
         />
       )}
@@ -190,13 +198,18 @@ function MapPage() {
 function GameModal({
   level,
   alreadyDone,
+  credits,
+  onSkip,
   onClose,
 }: {
   level: Level;
   alreadyDone: boolean;
+  credits: number;
+  onSkip: () => void;
   onClose: () => void;
 }) {
   const isAvailable = level.id === 1;
+  const canSkip = !alreadyDone && credits >= SKIP_COST;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-violet-deep/40 backdrop-blur-md animate-[fade-up_0.3s_ease-out]"
@@ -238,6 +251,17 @@ function GameModal({
           >
             {isAvailable ? (alreadyDone ? "Replay level →" : "Play now →") : "Peek inside →"}
           </Link>
+          {!alreadyDone && (
+            <button
+              onClick={onSkip}
+              disabled={!canSkip}
+              className="w-full rounded-full glass px-6 py-3 text-sm font-bold text-violet-deep hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title={canSkip ? `Spend ${SKIP_COST} credits to skip` : `Need ${SKIP_COST} 💎 to skip`}
+            >
+              ⤳ Skip level — {SKIP_COST} 💎
+              {!canSkip && <span className="ml-1 text-xs opacity-70">(need {SKIP_COST})</span>}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-full rounded-full glass px-6 py-3 text-sm font-semibold text-violet-deep hover:scale-[1.02] transition-transform"
