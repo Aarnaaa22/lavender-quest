@@ -185,7 +185,15 @@ function MapPage() {
         <GameModal
           level={openLevel}
           alreadyDone={isDone(openLevel.id)}
+          credits={progress.credits}
           onClose={() => setOpenLevel(null)}
+          onSkip={() => {
+            const next = skipLevel(openLevel.id, TOTAL_LEVELS);
+            if (next) {
+              setProgress(next);
+              setOpenLevel(null);
+            }
+          }}
         />
       )}
     </main>
@@ -195,13 +203,18 @@ function MapPage() {
 function GameModal({
   level,
   alreadyDone,
+  credits,
   onClose,
+  onSkip,
 }: {
   level: Level;
   alreadyDone: boolean;
+  credits: number;
   onClose: () => void;
+  onSkip: () => void;
 }) {
   const isAvailable = level.id === 1;
+  const canSkip = !alreadyDone && credits >= SKIP_COST;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-violet-deep/40 backdrop-blur-md animate-[fade-up_0.3s_ease-out]"
@@ -243,6 +256,17 @@ function GameModal({
           >
             {isAvailable ? (alreadyDone ? "Replay level →" : "Play now →") : "Peek inside →"}
           </Link>
+          {!alreadyDone && (
+            <button
+              onClick={onSkip}
+              disabled={!canSkip}
+              className="w-full rounded-full glass px-6 py-3 text-sm font-semibold text-violet-deep hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+              title={canSkip ? `Skip this level for ${SKIP_COST} 💎` : `Need ${SKIP_COST} 💎 to skip (you have ${credits})`}
+            >
+              <span>⏭ Skip level</span>
+              <span className="rounded-full bg-violet-deep/10 px-2 py-0.5 text-xs font-bold">−{SKIP_COST} 💎</span>
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-full rounded-full glass px-6 py-3 text-sm font-semibold text-violet-deep hover:scale-[1.02] transition-transform"
@@ -254,3 +278,4 @@ function GameModal({
     </div>
   );
 }
+
