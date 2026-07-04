@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = { levelId: number; onWin: () => void; onReturn: () => void };
 
-const SURVIVE_MS = 24000;
-const SAFE_HALF = 22; // safe zone half-width in %
-const BOUND_HALF = 38; // hard boundary half-width in %
-const DRAIN_PER_SEC = 18; // outside safe zone
-const REFILL_PER_SEC = 14; // inside safe zone
+const SURVIVE_MS = 20000;
+const SAFE_HALF = 34; // wide safe zone
+const BOUND_HALF = 46; // very forgiving hard boundary
+const DRAIN_PER_SEC = 6; // gentle drain outside safe zone
+const REFILL_PER_SEC = 22; // fast refill inside
 
 export default function LotusDrift({ levelId, onWin, onReturn }: Props) {
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
