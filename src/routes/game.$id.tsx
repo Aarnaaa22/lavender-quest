@@ -81,8 +81,9 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
       "Jump to leap over rocks & bushes (puddles need lane change).",
     ],
     controls: [
-      "← → arrows or swipe to change lane",
-      "Space / ↑ / swipe up / tap to jump",
+      "↑ / ↓ arrows (or ← →) to switch lanes",
+      "Tap Space bar to jump",
+      "Mobile: swipe up/down to switch lanes, tap to jump",
     ],
     goal: "Hit the score target OR survive the timer with health left.",
     onStart: () => {},
