@@ -104,7 +104,7 @@ export default function LotusDrift({ levelId, onWin, onReturn }: Props) {
 
       lotusXRef.current = target;
       setLotusX(target);
-      setWaveOffset(wave + gust);
+      setWaveOffset(wave);
 
       // Balance meter
       const outside = Math.abs(offsetFromCenter) > SAFE_HALF;
