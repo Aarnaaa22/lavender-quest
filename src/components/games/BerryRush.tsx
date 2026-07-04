@@ -84,9 +84,13 @@ export default function BerryRush({
   // Keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" || e.key === "a") moveLane(-1);
-      else if (e.key === "ArrowRight" || e.key === "d") moveLane(1);
-      else if (e.key === " " || e.key === "ArrowUp" || e.key === "w") {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "ArrowLeft" || e.key === "a") {
+        e.preventDefault();
+        moveLane(-1);
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "ArrowRight" || e.key === "d") {
+        e.preventDefault();
+        moveLane(1);
+      } else if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         doJump();
       }
