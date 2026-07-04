@@ -347,7 +347,7 @@ export default function BerryRush({
       </header>
 
       <p className="relative z-30 text-center text-xs font-semibold text-violet-deep/70 tracking-wide">
-        Level {levelId} · Berry Rush 🍇 — arrows / swipe to move · space / tap to jump
+        Level {levelId} · Berry Rush 🍇 — ↑/↓ to switch lanes · Space to jump
       </p>
 
       {/* Track */}
