@@ -84,9 +84,13 @@ export default function BerryRush({
   // Keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" || e.key === "a") moveLane(-1);
-      else if (e.key === "ArrowRight" || e.key === "d") moveLane(1);
-      else if (e.key === " " || e.key === "ArrowUp" || e.key === "w") {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "ArrowLeft" || e.key === "a") {
+        e.preventDefault();
+        moveLane(-1);
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "ArrowRight" || e.key === "d") {
+        e.preventDefault();
+        moveLane(1);
+      } else if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         doJump();
       }
@@ -343,7 +347,7 @@ export default function BerryRush({
       </header>
 
       <p className="relative z-30 text-center text-xs font-semibold text-violet-deep/70 tracking-wide">
-        Level {levelId} · Berry Rush 🍇 — arrows / swipe to move · space / tap to jump
+        Level {levelId} · Berry Rush 🍇 — ↑/↓ to switch lanes · Space to jump
       </p>
 
       {/* Track */}
