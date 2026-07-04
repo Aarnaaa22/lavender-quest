@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = { levelId: number; onWin: () => void; onReturn: () => void };
 
-const SURVIVE_MS = 20000;
-const SAFE_HALF = 34; // wide safe zone
-const BOUND_HALF = 46; // very forgiving hard boundary
-const DRAIN_PER_SEC = 6; // gentle drain outside safe zone
-const REFILL_PER_SEC = 22; // fast refill inside
+const SURVIVE_MS = 24000;
+const SAFE_HALF = 22; // safe zone half-width in %
+const BOUND_HALF = 38; // hard boundary half-width in %
+const DRAIN_PER_SEC = 18; // outside safe zone
+const REFILL_PER_SEC = 14; // inside safe zone
 
 export default function LotusDrift({ levelId, onWin, onReturn }: Props) {
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
@@ -72,24 +72,25 @@ export default function LotusDrift({ levelId, onWin, onReturn }: Props) {
       last = now;
       const elapsed = now - startRef.current;
 
-      // Wave force: slow, gentle sine — no gusts, no ramp
+      // Wave force: smooth sine + occasional gust
       const t = elapsed / 1000;
+      const intensity = 1 + Math.min(1.2, elapsed / 16000); // grows over time
       const wave =
-        Math.sin(t * 0.55) * 3.2 +
-        Math.sin(t * 0.23 + 1.2) * 2.0;
-      const waveForce = wave * dt; // % per frame contribution
+        Math.sin(t * 1.1) * 8 * intensity +
+        Math.sin(t * 0.37 + 1.2) * 5 * intensity +
+        Math.sin(t * 2.3) * 2.5 * intensity;
+      // Occasional gust
+      const gust = Math.sin(t * 0.21) > 0.92 ? Math.sin(t * 6) * 10 : 0;
+      const waveForce = (wave + gust) * dt; // % per frame contribution
 
       // Player input
       let target = lotusXRef.current;
       if (pointerRef.current !== null) {
         // ease toward pointer
-        target += (pointerRef.current - target) * Math.min(1, dt * 6);
+        target += (pointerRef.current - target) * Math.min(1, dt * 7);
       }
-      target += inputRef.current * 42 * dt;
+      target += inputRef.current * 55 * dt;
       target += waveForce;
-
-      // Gentle auto-stabilize toward center (assist feel)
-      target += (50 - target) * Math.min(1, dt * 0.9);
 
       // Clamp to outer bounds visually but lose if past boundary
       const center = 50;
@@ -104,7 +105,7 @@ export default function LotusDrift({ levelId, onWin, onReturn }: Props) {
 
       lotusXRef.current = target;
       setLotusX(target);
-      setWaveOffset(wave);
+      setWaveOffset(wave + gust);
 
       // Balance meter
       const outside = Math.abs(offsetFromCenter) > SAFE_HALF;
