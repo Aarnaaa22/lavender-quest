@@ -72,25 +72,24 @@ export default function LotusDrift({ levelId, onWin, onReturn }: Props) {
       last = now;
       const elapsed = now - startRef.current;
 
-      // Wave force: smooth sine + occasional gust
+      // Wave force: slow, gentle sine — no gusts, no ramp
       const t = elapsed / 1000;
-      const intensity = 1 + Math.min(1.2, elapsed / 16000); // grows over time
       const wave =
-        Math.sin(t * 1.1) * 8 * intensity +
-        Math.sin(t * 0.37 + 1.2) * 5 * intensity +
-        Math.sin(t * 2.3) * 2.5 * intensity;
-      // Occasional gust
-      const gust = Math.sin(t * 0.21) > 0.92 ? Math.sin(t * 6) * 10 : 0;
-      const waveForce = (wave + gust) * dt; // % per frame contribution
+        Math.sin(t * 0.55) * 3.2 +
+        Math.sin(t * 0.23 + 1.2) * 2.0;
+      const waveForce = wave * dt; // % per frame contribution
 
       // Player input
       let target = lotusXRef.current;
       if (pointerRef.current !== null) {
         // ease toward pointer
-        target += (pointerRef.current - target) * Math.min(1, dt * 7);
+        target += (pointerRef.current - target) * Math.min(1, dt * 6);
       }
-      target += inputRef.current * 55 * dt;
+      target += inputRef.current * 42 * dt;
       target += waveForce;
+
+      // Gentle auto-stabilize toward center (assist feel)
+      target += (50 - target) * Math.min(1, dt * 0.9);
 
       // Clamp to outer bounds visually but lose if past boundary
       const center = 50;
