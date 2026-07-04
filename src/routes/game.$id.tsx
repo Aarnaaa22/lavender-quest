@@ -90,18 +90,18 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
   },
   5: {
     level: 5, title: "Lotus Drift", emoji: "🌸",
-    tagline: "Balance & control.",
+    tagline: "A calm balance break.",
     rules: [
-      "Keep the floating lotus inside the glowing safe zone.",
-      "Waves push you constantly — make small, steady adjustments.",
-      "Outside the zone, your balance meter drains.",
-      "Drift past the boundary OR empty the meter = lose.",
+      "Gentle waves rock the lotus on a lavender sea.",
+      "Nudge it back toward the middle to stay centered.",
+      "The safe zone is wide — you only lose if you drift far past the boundary.",
+      "It's meant to feel relaxing, not stressful.",
     ],
     controls: [
       "← → / A D to steer",
       "Drag with mouse or finger to glide",
     ],
-    goal: "Survive 24 seconds of waves with balance to spare.",
+    goal: "Stay balanced for 20 peaceful seconds.",
     onStart: () => {},
   },
 };
