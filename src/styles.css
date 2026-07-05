@@ -556,78 +556,55 @@
 /* Lotus Maze (Level 5) */
 .lotus-maze-bg {
   background:
-    radial-gradient(ellipse at 20% 10%, oklch(0.85 0.12 300 / 0.55), transparent 60%),
-    radial-gradient(ellipse at 80% 90%, oklch(0.7 0.18 320 / 0.5), transparent 60%),
-    linear-gradient(180deg, oklch(0.35 0.14 295) 0%, oklch(0.5 0.18 310) 60%, oklch(0.62 0.16 300) 100%);
+    radial-gradient(ellipse at 20% 10%, oklch(0.55 0.14 300 / 0.55), transparent 60%),
+    radial-gradient(ellipse at 80% 90%, oklch(0.45 0.18 320 / 0.55), transparent 60%),
+    linear-gradient(180deg, oklch(0.22 0.10 290) 0%, oklch(0.28 0.14 300) 60%, oklch(0.32 0.14 310) 100%);
 }
-.lotus-maze-grid {
-  filter: drop-shadow(0 0 20px oklch(0.6 0.2 300 / 0.35));
-  animation: lm-breathe 6s ease-in-out infinite;
+.lm-frame {
+  background: linear-gradient(135deg, oklch(0.35 0.14 295 / 0.35), oklch(0.28 0.14 285 / 0.35));
+  border: 1px solid oklch(0.85 0.12 300 / 0.25);
+  box-shadow: 0 0 32px oklch(0.6 0.2 300 / 0.35), inset 0 0 24px oklch(0.9 0.15 320 / 0.1);
+  backdrop-filter: blur(8px);
 }
-@keyframes lm-breathe {
-  0%,100% { filter: drop-shadow(0 0 18px oklch(0.6 0.2 300 / 0.3)); }
-  50%     { filter: drop-shadow(0 0 32px oklch(0.75 0.22 320 / 0.5)); }
+.lm-board {
+  background:
+    radial-gradient(circle at 50% 50%, oklch(0.22 0.10 290) 0%, oklch(0.14 0.08 285) 100%);
 }
-.lm-wall {
-  background: linear-gradient(135deg, oklch(0.35 0.14 295), oklch(0.28 0.12 285));
-  border-radius: 3px;
-  box-shadow: inset 0 0 6px oklch(0.5 0.2 320 / 0.4), 0 0 4px oklch(0.6 0.2 300 / 0.3);
-  transition: opacity 0.25s ease;
+.lm-wall-rect {
+  fill: oklch(0.85 0.14 305);
+  filter: drop-shadow(0 0 3px oklch(0.75 0.18 300 / 0.7));
 }
-.lm-path {
-  background: radial-gradient(circle, oklch(0.88 0.08 300 / 0.35), oklch(0.75 0.12 310 / 0.15));
-  border-radius: 2px;
-  transition: opacity 0.25s ease, background 0.3s ease;
-}
-.lm-hint {
-  background: radial-gradient(circle, oklch(0.95 0.15 90 / 0.9), oklch(0.85 0.2 60 / 0.6));
-  box-shadow: 0 0 10px oklch(0.9 0.2 80 / 0.9);
+.lm-hint-dot {
+  fill: oklch(0.95 0.18 90);
+  filter: drop-shadow(0 0 6px oklch(0.9 0.22 80 / 0.95));
   animation: lm-hint-glow 0.9s ease-in-out infinite;
 }
 @keyframes lm-hint-glow {
-  0%,100% { box-shadow: 0 0 8px oklch(0.9 0.2 80 / 0.7); }
-  50%     { box-shadow: 0 0 18px oklch(0.95 0.22 80 / 1); }
+  0%,100% { opacity: 0.7; }
+  50%     { opacity: 1; }
 }
-.lm-goal {
-  background: radial-gradient(circle, oklch(0.95 0.18 340 / 0.95), oklch(0.75 0.22 320 / 0.6));
-  border-radius: 50%;
-  box-shadow: 0 0 20px oklch(0.9 0.24 335 / 0.9), 0 0 40px oklch(0.8 0.24 320 / 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.lm-goal-halo {
+  fill: oklch(0.85 0.22 335);
+  filter: blur(2px);
   animation: lm-goal-pulse 1.8s ease-in-out infinite;
 }
+.lm-goal-core {
+  fill: oklch(0.95 0.18 340);
+}
 @keyframes lm-goal-pulse {
-  0%,100% { transform: scale(1); }
-  50%     { transform: scale(1.08); }
+  0%,100% { transform: scale(1); opacity: 0.7; }
+  50%     { transform: scale(1.15); opacity: 1; }
 }
-.lm-lotus {
-  font-size: clamp(10px, 2vw, 16px);
-  animation: lm-lotus-spin 8s linear infinite;
-  filter: drop-shadow(0 0 6px oklch(1 0 0 / 0.8));
-}
-@keyframes lm-lotus-spin {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.15); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-.lm-player {
-  align-self: center;
-  justify-self: center;
-  width: 90%;
-  height: 90%;
-  border-radius: 50%;
-  background: radial-gradient(circle, oklch(0.95 0.15 320 / 0.95), oklch(0.75 0.22 300 / 0.7));
-  box-shadow: 0 0 12px oklch(0.85 0.22 320 / 0.9), 0 0 28px oklch(0.75 0.22 300 / 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(8px, 1.6vw, 14px);
-  transition: grid-column-start 0.14s ease, grid-row-start 0.14s ease;
+.lm-player-halo {
+  fill: oklch(0.85 0.22 320);
+  opacity: 0.55;
   animation: lm-player-pulse 1.4s ease-in-out infinite;
-  z-index: 5;
+}
+.lm-player-core {
+  fill: oklch(0.98 0.12 320);
 }
 @keyframes lm-player-pulse {
-  0%,100% { box-shadow: 0 0 10px oklch(0.85 0.22 320 / 0.7), 0 0 20px oklch(0.75 0.22 300 / 0.4); }
-  50%     { box-shadow: 0 0 18px oklch(0.95 0.24 320 / 1), 0 0 36px oklch(0.8 0.24 300 / 0.7); }
+  0%,100% { opacity: 0.5; transform: scale(1); }
+  50%     { opacity: 0.85; transform: scale(1.12); }
 }
+
