@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AmbientBackground } from "@/components/AmbientBackground";
 
 import { LEVELS, TOTAL_LEVELS, type Level } from "@/lib/levels";
@@ -22,16 +22,60 @@ function MapPage() {
   const [progress, setProgress] = useState<Progress>({ currentLevel: 1, completed: [] });
   const [openLevel, setOpenLevel] = useState<Level | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [clock, setClock] = useState(() => new Date());
+  const [tilt, setTilt] = useState({ x: 14, y: -10 });
+  const [isDragging, setIsDragging] = useState(false);
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setProgress(loadProgress());
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const interval = window.setInterval(() => setClock(new Date()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   const player = useMemo(
     () => LEVELS.find((l) => l.id === progress.currentLevel) ?? LEVELS[0],
     [progress.currentLevel],
   );
+
+  const clouds = [
+    { left: "12%", top: "10%", size: "w-36 h-16", delay: "0s" },
+    { left: "68%", top: "8%", size: "w-44 h-20", delay: "3s" },
+    { left: "34%", top: "18%", size: "w-32 h-14", delay: "6s" },
+  ];
+
+  const boats = [
+    { left: "8%", top: "72%", delay: "0s", duration: "14s" },
+    { left: "74%", top: "62%", delay: "2s", duration: "18s" },
+  ];
+
+  const onPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    pointerRef.current = { x: event.clientX, y: event.clientY };
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointerRef.current) return;
+    const deltaX = event.clientX - pointerRef.current.x;
+    const deltaY = event.clientY - pointerRef.current.y;
+    pointerRef.current = { x: event.clientX, y: event.clientY };
+    setTilt((current) => ({
+      x: Math.max(2, Math.min(24, current.x - deltaY * 0.08)),
+      y: Math.max(-24, Math.min(24, current.y + deltaX * 0.08)),
+    }));
+  }, []);
+
+  const onPointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    pointerRef.current = null;
+    setIsDragging(false);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  }, []);
 
   const isUnlocked = (id: number) => id <= progress.currentLevel;
   const isDone = (id: number) => progress.completed.includes(id);
@@ -50,16 +94,23 @@ function MapPage() {
     <main className="relative min-h-screen px-4 sm:px-8 py-8">
       <AmbientBackground density={20} />
 
-      <header className="relative z-10 max-w-6xl mx-auto flex items-center justify-between gap-4 mb-6">
-        <Link to="/" className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep hover:scale-105 transition-transform">
-          ← Home
-        </Link>
+      <header className="relative z-10 max-w-6xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep hover:scale-105 transition-transform">
+            ← Home
+          </Link>
+          <div className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-violet-900">
+            {clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+          </div>
+        </div>
+
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-gradient">Lavender Island</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             {progress.completed.length} / {TOTAL_LEVELS} treasures collected
           </p>
         </div>
+
         <button
           onClick={onReset}
           className="rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep hover:scale-105 transition-transform"
@@ -70,89 +121,145 @@ function MapPage() {
 
       <div className="relative z-10 max-w-6xl mx-auto">
         <div
+          ref={mapRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
           className={`relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden glass shadow-glow transition-all duration-700 ${
             mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
-          }`}
+          } ${isDragging ? "map-dragging" : ""}`}
+          style={{
+            perspective: 1200,
+            transformStyle: "preserve-3d",
+          }}
         >
-          <img
-            src={islandImg}
-            alt="Lavender island map"
-            className="absolute inset-0 size-full object-cover"
-            width={1536}
-            height={1024}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-violet-deep/30" />
+          <div
+            className="absolute inset-0"
+            style={{
+              transform: `translateZ(0px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+              transformStyle: "preserve-3d",
+              transition: isDragging ? "none" : "transform 0.25s ease-out",
+            }}
+          >
+            <img
+              src={islandImg}
+              alt="Lavender island map"
+              className="absolute inset-0 size-full object-cover"
+              width={1536}
+              height={1024}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-violet-deep/30" />
 
-          {/* Dotted paths */}
-          <svg className="absolute inset-0 size-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {LEVELS.slice(0, -1).map((l, i) => {
-              const next = LEVELS[i + 1];
-              const unlocked = isDone(l.id);
+            {clouds.map((cloud, index) => (
+              <div
+                key={index}
+                className={`absolute ${cloud.size} rounded-full bg-white/70 blur-0 opacity-80 map-cloud`}
+                style={{ left: cloud.left, top: cloud.top, animationDelay: cloud.delay }}
+              />
+            ))}
+
+            {boats.map((boat, index) => (
+              <div
+                key={index}
+                className="absolute flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold text-violet-950 map-boat"
+                style={{ left: boat.left, top: boat.top, animationDelay: boat.delay, animationDuration: boat.duration }}
+              >
+                ⛵
+              </div>
+            ))}
+
+            {LEVELS.map((l) => (
+              <div
+                key={`zone-${l.id}`}
+                className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-white/5 shadow-soft map-zone"
+                style={{ left: `${l.x}%`, top: `${l.y}%`, width: `${l.id * 4 + 28}px`, height: `${l.id * 4 + 24}px` }}
+              />
+            ))}
+
+            <div
+              className="absolute -translate-x-1/2 -translate-y-1/2 text-4xl"
+              style={{ left: `${LEVELS[TOTAL_LEVELS - 1].x}%`, top: `${LEVELS[TOTAL_LEVELS - 1].y - 8}%` }}
+            >
+              🏰
+            </div>
+            <div
+              className="absolute -translate-x-1/2 -translate-y-1/2 text-2xl"
+              style={{ left: `${LEVELS[TOTAL_LEVELS - 1].x + 10}%`, top: `${LEVELS[TOTAL_LEVELS - 1].y + 8}%` }}
+            >
+              🕰️
+            </div>
+
+            {/* Dotted paths */}
+            <svg className="absolute inset-0 size-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+              {LEVELS.slice(0, -1).map((l, i) => {
+                const next = LEVELS[i + 1];
+                const unlocked = isDone(l.id);
+                return (
+                  <line
+                    key={l.id}
+                    x1={l.x}
+                    y1={l.y}
+                    x2={next.x}
+                    y2={next.y}
+                    stroke={unlocked ? "white" : "rgba(255,255,255,0.5)"}
+                    strokeWidth={0.5}
+                    strokeDasharray="1.2 1.6"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                    style={{
+                      filter: unlocked
+                        ? "drop-shadow(0 0 6px rgba(255,200,255,0.9))"
+                        : "drop-shadow(0 1px 2px rgba(80,40,120,0.4))",
+                      animation: unlocked ? "dash 30s linear infinite" : undefined,
+                    }}
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Level nodes */}
+            {LEVELS.map((l) => {
+              const unlocked = isUnlocked(l.id);
+              const done = isDone(l.id);
+              const isCurrent = l.id === progress.currentLevel;
               return (
-                <line
+                <button
                   key={l.id}
-                  x1={l.x}
-                  y1={l.y}
-                  x2={next.x}
-                  y2={next.y}
-                  stroke={unlocked ? "white" : "rgba(255,255,255,0.5)"}
-                  strokeWidth={0.5}
-                  strokeDasharray="1.2 1.6"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                  style={{
-                    filter: unlocked
-                      ? "drop-shadow(0 0 6px rgba(255,200,255,0.9))"
-                      : "drop-shadow(0 1px 2px rgba(80,40,120,0.4))",
-                    animation: unlocked ? "dash 30s linear infinite" : undefined,
-                  }}
-                />
+                  onClick={() => unlocked && setOpenLevel(l)}
+                  disabled={!unlocked}
+                  className={`group absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                    unlocked ? "cursor-pointer hover:scale-110" : "cursor-not-allowed"
+                  }`}
+                  style={{ left: `${l.x}%`, top: `${l.y}%` }}
+                  aria-label={`${l.name} — ${unlocked ? (done ? "completed" : "unlocked") : "locked"}`}
+                >
+                  <span
+                    className={`flex items-center justify-center size-12 sm:size-14 rounded-full text-2xl shadow-node transition-all ${
+                      done
+                        ? "bg-button-grad text-white"
+                        : unlocked
+                          ? "bg-white/95 text-violet-deep"
+                          : "bg-white/40 text-violet-deep/50 backdrop-blur"
+                    } ${isCurrent ? "animate-pulse-glow" : ""}`}
+                  >
+                    {done ? "💜" : unlocked ? l.emoji : "🔒"}
+                  </span>
+                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-full glass px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-violet-deep opacity-0 group-hover:opacity-100 transition-opacity">
+                    {l.name}
+                  </span>
+                </button>
               );
             })}
-          </svg>
 
-          {/* Level nodes */}
-          {LEVELS.map((l) => {
-            const unlocked = isUnlocked(l.id);
-            const done = isDone(l.id);
-            const isCurrent = l.id === progress.currentLevel;
-            return (
-              <button
-                key={l.id}
-                onClick={() => unlocked && setOpenLevel(l)}
-                disabled={!unlocked}
-                className={`group absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                  unlocked ? "cursor-pointer hover:scale-110" : "cursor-not-allowed"
-                }`}
-                style={{ left: `${l.x}%`, top: `${l.y}%` }}
-                aria-label={`${l.name} — ${unlocked ? (done ? "completed" : "unlocked") : "locked"}`}
-              >
-                <span
-                  className={`flex items-center justify-center size-12 sm:size-14 rounded-full text-2xl shadow-node transition-all ${
-                    done
-                      ? "bg-button-grad text-white"
-                      : unlocked
-                        ? "bg-white/95 text-violet-deep"
-                        : "bg-white/40 text-violet-deep/50 backdrop-blur"
-                  } ${isCurrent ? "animate-pulse-glow" : ""}`}
-                >
-                  {done ? "💜" : unlocked ? l.emoji : "🔒"}
-                </span>
-                <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-full glass px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-violet-deep opacity-0 group-hover:opacity-100 transition-opacity">
-                  {l.name}
-                </span>
-              </button>
-            );
-          })}
-
-          {/* Player marker */}
-          <div
-            className="absolute -translate-x-1/2 pointer-events-none transition-all duration-700 ease-out"
-            style={{ left: `${player.x}%`, top: `${player.y}%`, transform: `translate(-50%, calc(-50% - 38px))` }}
-          >
-            <span className="text-3xl animate-float drop-shadow-[0_4px_8px_rgba(120,60,180,0.45)]">
-              🧚‍♀️
-            </span>
+            {/* Player marker */}
+            <div
+              className="absolute -translate-x-1/2 pointer-events-none transition-all duration-700 ease-out"
+              style={{ left: `${player.x}%`, top: `${player.y}%`, transform: `translate(-50%, calc(-50% - 38px))` }}
+            >
+              <span className="text-3xl animate-float drop-shadow-[0_4px_8px_rgba(120,60,180,0.45)]">
+                🧚‍♀️
+              </span>
+            </div>
           </div>
         </div>
 

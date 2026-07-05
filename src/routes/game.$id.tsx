@@ -9,6 +9,14 @@ import LotusMaze from "@/components/games/LotusMaze";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
 
+type PlaneFlight = {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  dx: string;
+  dy: string;
+  nextLevel: number;
+};
+
 export const Route = createFileRoute("/game/$id")({
   head: ({ params }) => ({
     meta: [
@@ -117,17 +125,45 @@ function GamePage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [planeFlight, setPlaneFlight] = useState<PlaneFlight | null>(null);
   const actionHandledRef = useRef(false);
+  const planeTimeoutRef = useRef<number | null>(null);
+  const planeContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setStarted(false);
     setFeedback(null);
     setShowSkipConfirm(false);
     setIsFinished(false);
+    setPlaneFlight(null);
     actionHandledRef.current = false;
     const progress = loadProgress();
     setCredits(progress.credits);
+
+    return () => {
+      if (planeTimeoutRef.current) window.clearTimeout(planeTimeoutRef.current);
+    };
   }, [levelId]);
+
+  const buildPlaneFlight = useCallback(
+    (fromLevel: number, toLevel: number): PlaneFlight | null => {
+      const current = LEVELS.find((l) => l.id === fromLevel);
+      const next = LEVELS.find((l) => l.id === toLevel);
+      if (!current || !next || !planeContainerRef.current) return null;
+
+      const bounds = planeContainerRef.current.getBoundingClientRect();
+      const fromPx = { x: (current.x / 100) * bounds.width, y: (current.y / 100) * bounds.height };
+      const toPx = { x: (next.x / 100) * bounds.width, y: (next.y / 100) * bounds.height };
+      return {
+        from: { x: current.x, y: current.y },
+        to: { x: next.x, y: next.y },
+        dx: `${toPx.x - fromPx.x}px`,
+        dy: `${toPx.y - fromPx.y}px`,
+        nextLevel: toLevel,
+      };
+    },
+    [],
+  );
 
   const onReturn = useCallback(() => navigate({ to: "/map" }), [navigate]);
 
@@ -165,8 +201,18 @@ function GamePage() {
       return;
     }
 
-    navigate({ to: "/game/$id", params: { id: String(levelId + 1) } });
-  }, [levelId, navigate]);
+    const flight = buildPlaneFlight(levelId, levelId + 1);
+    if (!flight) {
+      navigate({ to: "/game/$id", params: { id: String(levelId + 1) } });
+      return;
+    }
+
+    setPlaneFlight(flight);
+    planeTimeoutRef.current = window.setTimeout(() => {
+      setPlaneFlight(null);
+      navigate({ to: "/game/$id", params: { id: String(levelId + 1) } });
+    }, 1100);
+  }, [buildPlaneFlight, levelId, navigate]);
 
   if (!level) {
     return (
@@ -252,7 +298,36 @@ function GamePage() {
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{pageContent}</div>
+      <div ref={planeContainerRef} className="mx-auto max-w-6xl px-4 py-6 sm:px-6 relative">
+        {pageContent}
+
+        {planeFlight ? (
+          <div className="pointer-events-none absolute inset-0 z-40">
+            <svg className="absolute inset-0 overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line
+                x1={planeFlight.from.x}
+                y1={planeFlight.from.y}
+                x2={planeFlight.to.x}
+                y2={planeFlight.to.y}
+                stroke="rgba(255, 105, 180, 0.85)"
+                strokeWidth="1"
+                strokeDasharray="3 3"
+              />
+            </svg>
+            <div
+              className="absolute -translate-x-1/2 -translate-y-1/2 text-3xl animate-plane-flight"
+              style={{
+                left: `${planeFlight.from.x}%`,
+                top: `${planeFlight.from.y}%`,
+                "--dx": planeFlight.dx,
+                "--dy": planeFlight.dy,
+              } as React.CSSProperties}
+            >
+              ✈️
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

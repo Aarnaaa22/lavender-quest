@@ -292,6 +292,48 @@
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid oklch(1 0 0 / 0.6);
   }
+
+  .map-cloud {
+    animation: cloud-drift 40s ease-in-out infinite;
+  }
+
+  .map-boat {
+    animation: boat-sail linear infinite;
+    border-radius: 9999px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    transform-style: preserve-3d;
+  }
+
+  .map-zone {
+    backdrop-filter: blur(16px);
+    transform: translateZ(10px);
+  }
+
+  .map-dragging {
+    cursor: grabbing;
+  }
+}
+
+@keyframes cloud-drift {
+  0% { transform: translateX(0px) translateZ(10px); }
+  50% { transform: translateX(16px) translateZ(12px); }
+  100% { transform: translateX(0px) translateZ(10px); }
+}
+
+@keyframes boat-sail {
+  0% { transform: translateX(0px) translateY(0px) translateZ(12px); }
+  50% { transform: translateX(24px) translateY(-3px) translateZ(12px); }
+  100% { transform: translateX(0px) translateY(0px) translateZ(12px); }
+}
+
+@keyframes plane-flight {
+  0% { transform: translate3d(0px, 0px, 0px) rotate(0deg); opacity: 1; }
+  70% { transform: translate3d(var(--dx), var(--dy), 0px) rotate(15deg); opacity: 1; }
+  100% { transform: translate3d(var(--dx), var(--dy), 0px) rotate(20deg); opacity: 1; }
+}
+
+.animate-plane-flight {
+  animation: plane-flight 1s ease-in-out forwards;
 }
 
 @keyframes float {
