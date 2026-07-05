@@ -10,36 +10,65 @@ type GarlandItem = {
   type: GarlandType;
 };
 
+type GarlandInstance = GarlandItem & { instanceId: string };
 type DragState = {
-  item: GarlandItem;
+  item: GarlandInstance;
   x: number;
   y: number;
 };
 
 const GARLAND_ITEMS: GarlandItem[] = [
-  { id: "shell-pearls", icon: "🐚", label: "Pearl Shell", hue: 288, type: "shell" },
-  { id: "shell-oyster", icon: "🦪", label: "Oyster Shell", hue: 310, type: "shell" },
-  { id: "shell-coral", icon: "🪸", label: "Coral Shell", hue: 270, type: "shell" },
-  { id: "shell-spiral", icon: "🐙", label: "Spiral Shell", hue: 300, type: "shell" },
-  { id: "shell-fan", icon: "🐠", label: "Fan Shell", hue: 252, type: "shell" },
+  { id: "shell-ivory", icon: "🐚", label: "Ivory Shell", hue: 42, type: "shell" },
+  { id: "shell-amethyst", icon: "🦪", label: "Amethyst Shell", hue: 292, type: "shell" },
+  { id: "shell-teal", icon: "🪸", label: "Teal Shell", hue: 176, type: "shell" },
+  { id: "shell-petal", icon: "🐚", label: "Petal Shell", hue: 329, type: "shell" },
   { id: "charm-starfish", icon: "⭐", label: "Starfish Charm", hue: 340, type: "charm" },
   { id: "charm-sparkle", icon: "🌟", label: "Sparkle Charm", hue: 320, type: "charm" },
-  { id: "charm-shell", icon: "🌺", label: "Lavender Charm", hue: 305, type: "charm" },
-  { id: "charm-drifts", icon: "🏖️", label: "Beach Charm", hue: 260, type: "charm" },
+  { id: "charm-lavender", icon: "🌺", label: "Lavender Charm", hue: 305, type: "charm" },
+  { id: "charm-breeze", icon: "🏖️", label: "Beach Breeze Charm", hue: 260, type: "charm" },
 ];
 
-const SLOT_MIN = 6;
-const SLOT_MAX = 8;
-const TIME_LIMIT = 32;
-const WRONG_PENALTY = 3;
+const SHELL_ITEMS = GARLAND_ITEMS.filter((item) => item.type === "shell");
+const CHARM_ITEMS = GARLAND_ITEMS.filter((item) => item.type === "charm");
+const SLOT_MIN = 8;
+const SLOT_MAX = 10;
+const TIME_LIMIT = 22;
+const WRONG_PENALTY = 4;
 
 function randomBetween(min: number, max: number) {
   return Math.floor(min + Math.random() * (max - min + 1));
 }
 
+function buildPalette() {
+  return GARLAND_ITEMS.flatMap((item) =>
+    [0, 1, 2].map((index) => ({ ...item, instanceId: `${item.id}-${index}` })),
+  ).sort(() => Math.random() - 0.5);
+}
+
 function pickGarlandPattern() {
   const length = randomBetween(SLOT_MIN, SLOT_MAX);
-  return Array.from({ length }, () => GARLAND_ITEMS[Math.floor(Math.random() * GARLAND_ITEMS.length)].id);
+  const pattern: string[] = [];
+
+  for (let i = 0; i < length; i += 1) {
+    const isShellPosition = i === 0 || i === length - 1 || i % 2 === 0;
+    const pool = isShellPosition ? SHELL_ITEMS : CHARM_ITEMS;
+    const lastItem = pattern[i - 1];
+    const secondLastItem = pattern[i - 2];
+    const options = pool.filter((item) => item.id !== lastItem || item.id !== secondLastItem);
+    const choice = options.length ? options[Math.floor(Math.random() * options.length)] : pool[Math.floor(Math.random() * pool.length)];
+    pattern.push(choice.id);
+  }
+
+  if (pattern.filter((id) => CHARM_ITEMS.some((item) => item.id === id)).length < 2) {
+    pattern[1] = CHARM_ITEMS[Math.floor(Math.random() * CHARM_ITEMS.length)].id;
+  }
+
+  if (pattern.filter((id) => SHELL_ITEMS.some((item) => item.id === id)).length < 4) {
+    const extraShell = SHELL_ITEMS[Math.floor(Math.random() * SHELL_ITEMS.length)].id;
+    pattern[randomBetween(0, length - 1)] = extraShell;
+  }
+
+  return pattern;
 }
 
 function getItemById(id: string) {
@@ -57,6 +86,7 @@ export default function ShellGarland({
 }) {
   const [pattern, setPattern] = useState<string[]>(() => pickGarlandPattern());
   const [placed, setPlaced] = useState<Array<string | null>>(() => Array(pattern.length).fill(null));
+  const [availableItems, setAvailableItems] = useState<GarlandInstance[]>(() => buildPalette());
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -71,7 +101,14 @@ export default function ShellGarland({
   }, [dragState]);
 
   const placeItem = useCallback(
-    (slotIndex: number, item: GarlandItem) => {
+    (slotIndex: number, item: GarlandInstance) => {
+      if (placed[slotIndex] !== null) {
+        setWrongSlot(slotIndex);
+        setTimeLeft((current) => Math.max(0, current - WRONG_PENALTY));
+        window.setTimeout(() => setWrongSlot(null), 260);
+        return;
+      }
+
       if (pattern[slotIndex] !== item.id) {
         setWrongSlot(slotIndex);
         setTimeLeft((current) => Math.max(0, current - WRONG_PENALTY));
@@ -84,8 +121,9 @@ export default function ShellGarland({
         next[slotIndex] = item.id;
         return next;
       });
+      setAvailableItems((items) => items.filter((current) => current.instanceId !== item.instanceId));
     },
-    [pattern],
+    [pattern, placed],
   );
 
   const handlePointerMove = useCallback((event: PointerEvent) => {
@@ -126,7 +164,7 @@ export default function ShellGarland({
     };
   }, [dragState, handlePointerMove, handlePointerUp]);
 
-  const startDrag = useCallback((item: GarlandItem, event: ReactPointerEvent<HTMLButtonElement>) => {
+  const startDrag = useCallback((item: GarlandInstance, event: ReactPointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     setDragState({ item, x: event.clientX, y: event.clientY });
     if ("setPointerCapture" in event.currentTarget) {
@@ -168,6 +206,7 @@ export default function ShellGarland({
     const nextPattern = pickGarlandPattern();
     setPattern(nextPattern);
     setPlaced(Array(nextPattern.length).fill(null));
+    setAvailableItems(buildPalette());
     setTimeLeft(TIME_LIMIT);
     setStatus("playing");
     completedRef.current = false;
@@ -286,9 +325,9 @@ export default function ShellGarland({
         <div className="shell-garland-card">
           <div className="mb-4 text-xs uppercase tracking-[0.32em] text-violet-200/70">Drag from the palette</div>
           <div className="shell-palette">
-            {GARLAND_ITEMS.map((item) => (
+            {availableItems.map((item) => (
               <button
-                key={item.id}
+                key={item.instanceId}
                 type="button"
                 onPointerDown={(event) => startDrag(item, event)}
                 className="shell-palette-item"
