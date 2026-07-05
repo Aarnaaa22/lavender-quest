@@ -333,42 +333,15 @@
     cursor: grabbing;
   }
 
-  .map-top-frame {
-    transform: perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1);
-  }
-
-  .map-world-frame {
-    transform: perspective(1600px) rotateX(50deg) rotateY(-10deg) scale(1.08);
-  }
-
-  .map-world-frame .glass {
-    background: oklch(1 0 0 / 0.6);
-  }
-
-  .animate-world-travel {
-    animation: world-travel 0.9s ease-in-out forwards;
-  }
-
-  @keyframes world-travel {
-    0% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-    40% {
-      transform: translate(calc(-50% + var(--dx) / 2), calc(-50% + var(--dy) / 2 - 22px)) scale(1.08);
-      opacity: 1;
-    }
-    100% {
-      transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1);
-      opacity: 1;
-    }
-  }
-
   .map-layer {
     position: absolute;
     inset: 0;
-    pointer-events: none;
     overflow: hidden;
+  }
+
+  .map-background-layer,
+  .map-midground-layer {
+    pointer-events: none;
   }
 
   .map-background-layer {
@@ -381,6 +354,7 @@
 
   .map-foreground-layer {
     opacity: 1;
+    pointer-events: auto;
   }
 
   .world-zone-shadow {

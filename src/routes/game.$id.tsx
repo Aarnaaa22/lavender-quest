@@ -6,6 +6,7 @@ import PetalMeadow from "@/components/games/PetalMeadow";
 import ButterflyDrift from "@/components/games/ButterflyDrift";
 import BerryRush from "@/components/games/BerryRush";
 import LotusMaze from "@/components/games/LotusMaze";
+import ShapeShift from "@/components/games/ShapeShift";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
 
@@ -111,6 +112,20 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
       "Mobile: swipe or tap the on-screen D-pad",
     ],
     goal: "Reach the lotus before the timer runs out.",
+    onStart: () => {},
+  },
+  6: {
+    level: 6, title: "Shape Shift", emoji: "🔷",
+    tagline: "Switch to the right shape before the gate arrives.",
+    rules: [
+      "Auto-run forward while gates approach from the top.",
+      "Press 1 for circle, 2 for square, 3 for triangle.",
+      "Match the gate shape to avoid losing a life.",
+      "Build combos for extra glow and bonus points.",
+    ],
+    controls: [
+      "1 → circle", "2 → square", "3 → triangle"],
+    goal: "Survive 30 seconds or score 20 correct matches.",
     onStart: () => {},
   },
 };
@@ -255,6 +270,7 @@ function GamePage() {
     if (levelId === 3) return <ButterflyDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 5) return <LotusMaze levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 6) return <ShapeShift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
 
     return <ComingSoon levelName={level.name} game={level.game} />;
   })();

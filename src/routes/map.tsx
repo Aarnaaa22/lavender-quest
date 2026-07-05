@@ -126,22 +126,11 @@ function MapPage() {
       </header>
 
       <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="flex justify-end pb-4">
-          <div className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep shadow-glow">
-            <span className="text-xl">🧭</span>
-            Top-down map view
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden rounded-[2rem] transition-all duration-700 map-top-frame">
+        <div className="relative overflow-hidden rounded-[2rem] transition-all duration-700">
           <div
             className={`relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden glass shadow-glow transition-all duration-700 ${
               mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
             }`}
-            style={{
-              perspective: 1200,
-              transformStyle: "preserve-3d",
-            }}
           >
             <div
               className="absolute inset-0"
