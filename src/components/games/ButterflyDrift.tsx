@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 
 type Speed = "slow" | "med" | "fast";
 type Butterfly = {
@@ -19,18 +19,19 @@ type Butterfly = {
   rot: number;
 };
 
-type Sparkle = { id: number; x: number; y: number };
+type Sparkle = { id: number; x: number; y: number; type: "catch" | "drop" | "escape" };
 
 const TARGET = 13;
 const TIME_LIMIT = 28;
 const MAX_ALIVE = 7;
+const HOLD_LIMIT = 4.5;
 
 function makeButterfly(id: number, forceRare = false): Butterfly {
   const r = Math.random();
   const speed: Speed = forceRare ? "fast" : r < 0.35 ? "slow" : r < 0.8 ? "med" : "fast";
   const baseSpeed = speed === "slow" ? 9 : speed === "med" ? 16 : 24;
   const angle = Math.random() * Math.PI * 2;
-  const rare = forceRare;
+  const rare = forceRare || Math.random() < 0.12;
   return {
     id,
     x: 10 + Math.random() * 80,
@@ -66,13 +67,21 @@ export default function ButterflyDrift({
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
+  const [net, setNet] = useState({ x: 52, y: 64 });
+  const [heldId, setHeldId] = useState<number | null>(null);
+  const [basketBounce, setBasketBounce] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const idRef = useRef(100);
   const rafRef = useRef<number | null>(null);
   const lastRef = useRef<number>(performance.now());
   const statusRef = useRef(status);
-  statusRef.current = status;
+  const heldIdRef = useRef<number | null>(null);
+  const holdStartRef = useRef<number | null>(null);
+  const netRef = useRef({ x: 52, y: 64 });
   const onWinRef = useRef(onWin);
+
+  statusRef.current = status;
   onWinRef.current = onWin;
 
   useEffect(() => {
@@ -82,7 +91,7 @@ export default function ButterflyDrift({
         const alive = prev.filter((b) => !b.caught);
         if (alive.length >= MAX_ALIVE) return prev;
         const wantRare = !alive.some((b) => b.rare) && Math.random() < 0.18;
-        return [...alive, makeButterfly(idRef.current++, wantRare)];
+        return [...prev, makeButterfly(idRef.current++, wantRare)];
       });
     }, 900);
     return () => clearInterval(t);
@@ -105,11 +114,47 @@ export default function ButterflyDrift({
 
   useEffect(() => {
     if (status !== "playing") return;
+    const escapeCheck = window.setInterval(() => {
+      if (heldIdRef.current !== null && holdStartRef.current !== null) {
+        const elapsed = (performance.now() - holdStartRef.current) / 1000;
+        if (elapsed > HOLD_LIMIT) {
+          setButterflies((prev) => {
+            const lost = prev.find((b) => b.id === heldIdRef.current);
+            if (!lost) return prev;
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect) {
+              addSparkle(
+                rect.left + (lost.x / 100) * rect.width,
+                rect.top + (lost.y / 100) * rect.height,
+                "escape",
+              );
+            }
+            heldIdRef.current = null;
+            setHeldId(null);
+            holdStartRef.current = null;
+            return prev.filter((b) => b.id !== lost.id);
+          });
+        }
+      }
+    }, 180);
+    return () => clearInterval(escapeCheck);
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== "playing") return;
     const tick = (now: number) => {
       const dt = Math.min(0.05, (now - lastRef.current) / 1000);
       lastRef.current = now;
       setButterflies((prev) =>
         prev.map((b) => {
+          if (b.caught && b.id === heldIdRef.current) {
+            return {
+              ...b,
+              x: netRef.current.x,
+              y: netRef.current.y,
+              rot: b.rot,
+            };
+          }
           if (b.caught) return b;
           let { vx, vy, x, y, nextTurn, phase } = b;
           nextTurn -= dt;
@@ -144,35 +189,83 @@ export default function ButterflyDrift({
     };
   }, [status]);
 
-  const handleCatch = useCallback(
-    (b: Butterfly, e: React.MouseEvent | React.TouchEvent) => {
-      if (b.caught || statusRef.current !== "playing") return;
-      const target = e.currentTarget as HTMLElement;
-      const rect = target.getBoundingClientRect();
-      const sid = Date.now() + Math.random();
-      setSparkles((prev) => [
-        ...prev,
-        { id: sid, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
-      ]);
-      setTimeout(() => setSparkles((prev) => prev.filter((s) => s.id !== sid)), 800);
+  const addSparkle = useCallback((x: number, y: number, type: Sparkle["type"]) => {
+    const id = Date.now() + Math.random();
+    setSparkles((prev) => [...prev, { id, x, y, type }]);
+    window.setTimeout(() => {
+      setSparkles((prev) => prev.filter((s) => s.id !== id));
+    }, 900);
+  }, []);
 
-      setButterflies((prev) => prev.map((p) => (p.id === b.id ? { ...p, caught: true } : p)));
-      setTimeout(() => {
-        setButterflies((prev) => prev.filter((p) => p.id !== b.id));
-      }, 600);
+  const catchRadius = 12;
+  const basketBounds = { left: 78, right: 106, top: 74, bottom: 92 };
 
-      const inc = b.rare ? 3 : 1;
-      setScore((s) => s + inc);
-      setCaughtCount((c) => {
-        const next = c + 1;
-        if (next >= TARGET && statusRef.current === "playing") {
-          setStatus("won");
-          onWinRef.current();
-        }
-        return next;
+  const tryDrop = useCallback(
+    (rect: DOMRect, nx: number, ny: number) => {
+      if (heldIdRef.current === null) return;
+      if (nx >= basketBounds.left && nx <= basketBounds.right && ny >= basketBounds.top && ny <= basketBounds.bottom) {
+        setButterflies((prev) => {
+          const held = prev.find((b) => b.id === heldIdRef.current);
+          if (!held) return prev;
+          const inc = held.rare ? 3 : 1;
+          addSparkle(
+            rect.left + (nx / 100) * rect.width,
+            rect.top + (ny / 100) * rect.height,
+            "drop"
+          );
+          setScore((s) => s + inc);
+          setCaughtCount((prevCount) => {
+            const nextCaught = prevCount + 1;
+            if (nextCaught >= TARGET && statusRef.current === "playing") {
+              setStatus("won");
+              onWinRef.current();
+            }
+            return nextCaught;
+          });
+          heldIdRef.current = null;
+          setHeldId(null);
+          holdStartRef.current = null;
+          setBasketBounce(true);
+          window.setTimeout(() => setBasketBounce(false), 420);
+          return prev.filter((b) => b.id !== held.id);
+        });
+      }
+    },
+    [addSparkle],
+  );
+
+  const handlePointer = useCallback(
+    (e: PointerEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const nx = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
+      const ny = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100));
+      setNet({ x: nx, y: ny });
+      netRef.current = { x: nx, y: ny };
+
+      if (statusRef.current !== "playing") return;
+      if (heldIdRef.current !== null) {
+        tryDrop(rect, nx, ny);
+        return;
+      }
+
+      setButterflies((prev) => {
+        const target = prev.find((b) => !b.caught && Math.hypot(b.x - nx, b.y - ny) < catchRadius);
+        if (!target) return prev;
+
+        addSparkle(
+          rect.left + (target.x / 100) * rect.width,
+          rect.top + (target.y / 100) * rect.height,
+          "catch"
+        );
+
+        heldIdRef.current = target.id;
+        setHeldId(target.id);
+        holdStartRef.current = performance.now();
+        return prev.map((b) => (b.id === target.id ? { ...b, caught: true } : b));
       });
     },
-    []
+    [addSparkle, tryDrop],
   );
 
   const progress = Math.min(100, (caughtCount / TARGET) * 100);
@@ -275,41 +368,60 @@ export default function ButterflyDrift({
           />
         </div>
         <p className="text-center text-xs font-semibold text-violet-deep/70 tracking-wide">
-          Level {levelId} · Butterfly Drift 🦋 · Bonus +3 for rare
-        </p>
-      </div>
+            Level {levelId} · Butterfly Net 🦋 · Catch {TARGET} butterflies in {TIME_LIMIT} seconds.
+          </p>
+        </div>
 
-      <div className="absolute inset-0 z-10">
-        {butterflies.map((b) => (
-          <button
-            key={b.id}
-            onClick={(e) => handleCatch(b, e)}
-            onTouchStart={(e) => { e.preventDefault(); handleCatch(b, e); }}
-            disabled={b.caught}
-            aria-label={b.rare ? "Rare butterfly" : "Butterfly"}
-            className={`butterfly ${b.caught ? "is-caught" : ""} ${b.rare ? "is-rare" : ""}`}
-            style={{
-              left: `${b.x}%`,
-              top: `${b.y}%`,
-              width: b.size,
-              height: b.size,
-              transform: `translate(-50%, -50%) rotate(${b.rot * 0.15}deg)`,
-              ["--hue" as string]: `${b.hue}`,
-            }}
-          >
-            <ButterflySVG hue={b.hue} rare={b.rare} />
-          </button>
-        ))}
-      </div>
+        <div className="relative z-20 mx-auto mt-6 max-w-5xl px-4 sm:px-6">
+          <div className="rounded-[2rem] border border-white/15 bg-white/10 p-4 text-center text-xs tracking-[0.12em] text-violet-deep/75 shadow-soft backdrop-blur md:p-5">
+            Sweep the net across the garden to catch one butterfly at a time, then carry it into the basket.
+          </div>
+        </div>
 
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-30">
-        {sparkles.map((s) => (
-          <span key={s.id} className="butterfly-sparkle" style={{ left: s.x, top: s.y }}>
-            <span>✨</span><span>💜</span><span>✨</span><span>🌸</span><span>✨</span>
-          </span>
-        ))}
-      </div>
+        <div
+          ref={containerRef}
+          className="relative z-20 mx-auto mt-8 h-[60vh] max-w-5xl touch-none overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-glow backdrop-blur"
+          onPointerMove={handlePointer}
+          onPointerDown={handlePointer}
+        >
+          <div className="absolute left-[78%] top-[74%] w-[18%] min-w-[140px] max-w-[220px] -translate-x-1/2">
+            <div className={`butterfly-basket ${basketBounce ? "basket-bounce" : ""}`}>
+              <div className="basket-label">Basket</div>
+            </div>
+            <p className="mt-3 text-center text-xs font-semibold text-violet-deep/70">
+              Drop caught butterflies here
+            </p>
+          </div>
 
+          {butterflies.map((b) => (
+            <div
+              key={b.id}
+              className={`butterfly ${b.caught ? "is-held" : ""} ${b.rare ? "is-rare" : ""}`}
+              style={{
+                left: `${b.x}%`,
+                top: `${b.y}%`,
+                width: b.size,
+                height: b.size,
+                transform: `translate(-50%, -50%) rotate(${b.rot * 0.15}deg)`,
+                ["--hue" as string]: `${b.hue}`,
+                pointerEvents: "none",
+              }}
+              aria-hidden="true"
+            >
+              <ButterflySVG hue={b.hue} rare={b.rare} />
+            </div>
+          ))}
+
+          <div
+            className={`butterfly-net ${heldId ? "has-prey" : ""} ${
+              heldId && net.x >= basketBounds.left && net.x <= basketBounds.right && net.y >= basketBounds.top && net.y <= basketBounds.bottom
+                ? "basket-ready"
+                : ""
+            }`}
+            style={{ left: `${net.x}%`, top: `${net.y}%` }}
+            aria-hidden="true"
+          />
+        </div>
       {status !== "playing" && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-violet-deep/40 backdrop-blur-md animate-[fade-up_0.4s_ease-out]">
           <div className="relative w-full max-w-md rounded-[2rem] glass shadow-glow p-10 text-center animate-[zoom-in_0.5s_cubic-bezier(0.16,1,0.3,1)]">

@@ -71,14 +71,15 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
     onStart: () => {},
   },
   3: {
-    level: 3, title: "Butterfly Drift", emoji: "🦋",
-    tagline: "Reaction & tracking.",
+    level: 3, title: "Butterfly Net", emoji: "🦋",
+    tagline: "Net, carry, and basket.",
     rules: [
-      "Catch butterflies as they drift across the garden.",
-      "Glowing rare butterflies fly faster but score 3.",
+      "Move the net to catch a butterfly, then carry it to the basket.",
+      "Only one butterfly can be held at once.",
+      "Rare glowing butterflies are faster and worth 3 points.",
     ],
-    controls: ["Tap / click butterflies"],
-    goal: "Catch 13 butterflies before time runs out.",
+    controls: ["Move the mouse or drag the net","Drop in the basket to score"],
+    goal: `Catch ${TARGET} butterflies before time runs out.`,
     onStart: () => {},
   },
   4: {

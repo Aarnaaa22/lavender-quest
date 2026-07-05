@@ -626,6 +626,77 @@
 }
 @keyframes bf-sparkle { 0%,100% { opacity: 1; } }
 
+.butterfly-net {
+  position: absolute;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 32px rgba(199, 145, 255, 0.35);
+  backdrop-filter: blur(10px);
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  pointer-events: none;
+}
+.butterfly-net.has-prey {
+  box-shadow: 0 0 38px rgba(212, 133, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.94);
+}
+.butterfly-net.basket-ready {
+  border-color: #ffffff;
+  box-shadow: 0 0 48px rgba(255, 212, 255, 0.95);
+}
+.butterfly-basket {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 0.85;
+  background: linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(235,211,255,0.7) 100%);
+  border-radius: 28% 28% 20% 20%;
+  box-shadow: inset 0 6px 14px rgba(255,255,255,0.52), 0 12px 24px rgba(133, 69, 205, 0.18);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.75rem;
+}
+.butterfly-basket::before,
+.butterfly-basket::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  left: 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.75), transparent 60%);
+}
+.butterfly-basket::before {
+  top: 10%;
+}
+.butterfly-basket::after {
+  top: 30%;
+  opacity: 0.7;
+}
+.butterfly-basket .basket-label {
+  position: relative;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6c3f8f;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(8px);
+  padding: 0.25rem 0.8rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 10px rgba(128, 64, 190, 0.18);
+}
+.basket-bounce {
+  animation: basket-bounce 0.42s ease-out;
+}
+@keyframes basket-bounce {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-12px); }
+  100% { transform: translateY(0); }
+}
 
 /* Lotus Drift (Level 5) */
 .lotus-drift-bg {

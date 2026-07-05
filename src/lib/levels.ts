@@ -12,7 +12,7 @@ export type Level = {
 export const LEVELS: Level[] = [
   { id: 1,  name: "Bubble Beach",     game: "Bubble Pop",      emoji: "🫧", x: 18, y: 78, description: "Pop the drifting lavender bubbles before they reach the shore." },
   { id: 2,  name: "Petal Meadow",     game: "Flower Match",    emoji: "🌸", x: 32, y: 60, description: "Match pairs of blooming petals across the meadow." },
-  { id: 3,  name: "Butterfly Glade",  game: "Butterfly Catch", emoji: "🦋", x: 46, y: 70, description: "Catch fluttering violet butterflies in your net." },
+  { id: 3,  name: "Butterfly Glade",  game: "Butterfly Net",   emoji: "🦋", x: 46, y: 70, description: "Use your net to catch butterflies and drop them into the lavender basket." },
   { id: 4,  name: "Berry Trail",      game: "Berry Run",       emoji: "🍇", x: 58, y: 55, description: "Run the winding trail and collect every berry." },
   { id: 5,  name: "Tide Cove",        game: "Wave Balance",    emoji: "🌊", x: 70, y: 78, description: "Balance on the tide as soft waves roll in." },
   { id: 6,  name: "Potion Hut",       game: "Potion Mix",      emoji: "🧪", x: 80, y: 62, description: "Brew a swirling lilac potion from rare ingredients." },
