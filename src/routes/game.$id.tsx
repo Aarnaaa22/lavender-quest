@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { LEVELS, TOTAL_LEVELS } from "@/lib/levels";
-import { completeLevel } from "@/lib/storage";
+import { completeLevel, loadProgress, skipLevel } from "@/lib/storage";
 import PetalMeadow from "@/components/games/PetalMeadow";
 import ButterflyDrift from "@/components/games/ButterflyDrift";
 import BerryRush from "@/components/games/BerryRush";
 import LotusMaze from "@/components/games/LotusMaze";
 import GameIntro from "@/components/games/GameIntro";
+import { GameHeader } from "@/components/GameHeader";
 
 export const Route = createFileRoute("/game/$id")({
   head: ({ params }) => ({
@@ -112,9 +113,60 @@ function GamePage() {
   const level = LEVELS.find((l) => l.id === levelId);
   const navigate = useNavigate();
   const [started, setStarted] = useState(false);
+  const [credits, setCredits] = useState(5);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const actionHandledRef = useRef(false);
 
-  // Reset intro when switching levels
-  useEffect(() => { setStarted(false); }, [levelId]);
+  useEffect(() => {
+    setStarted(false);
+    setFeedback(null);
+    setShowSkipConfirm(false);
+    setIsFinished(false);
+    actionHandledRef.current = false;
+    const progress = loadProgress();
+    setCredits(progress.credits);
+  }, [levelId]);
+
+  const onReturn = useCallback(() => navigate({ to: "/map" }), [navigate]);
+
+  const confirmSkip = useCallback(() => {
+    if (actionHandledRef.current) return;
+    if (credits < 5) {
+      setFeedback("Not enough credits to skip");
+      setShowSkipConfirm(false);
+      return;
+    }
+
+    actionHandledRef.current = true;
+    const nextProgress = skipLevel(levelId, TOTAL_LEVELS);
+    setCredits(nextProgress.credits);
+    setFeedback("Level skipped! -5 credits");
+    setShowSkipConfirm(false);
+
+    if (levelId === TOTAL_LEVELS) {
+      setIsFinished(true);
+      return;
+    }
+
+    navigate({ to: "/game/$id", params: { id: String(levelId + 1) } });
+  }, [credits, levelId, navigate]);
+
+  const onWin = useCallback(() => {
+    if (actionHandledRef.current) return;
+    actionHandledRef.current = true;
+    const nextProgress = completeLevel(levelId, TOTAL_LEVELS);
+    setCredits(nextProgress.credits);
+    setFeedback("Level completed! +3 credits");
+
+    if (levelId === TOTAL_LEVELS) {
+      setIsFinished(true);
+      return;
+    }
+
+    navigate({ to: "/game/$id", params: { id: String(levelId + 1) } });
+  }, [levelId, navigate]);
 
   if (!level) {
     return (
@@ -130,20 +182,79 @@ function GamePage() {
   }
 
   const intro = INTROS[levelId];
-  if (!started && intro) {
-    return <GameIntro {...intro} onStart={() => setStarted(true)} />;
-  }
+  const skipHelperText = credits < 5 ? "Not enough credits to skip" : "Skip this level for -5 credits";
 
-  const onWin = () => completeLevel(levelId, TOTAL_LEVELS);
-  const onReturn = () => navigate({ to: "/map" });
+  const pageContent = (() => {
+    if (!started && intro) {
+      return <GameIntro {...intro} onStart={() => setStarted(true)} />;
+    }
 
-  if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;
-  if (levelId === 2) return <PetalMeadow levelId={levelId} onWin={onWin} onReturn={onReturn} />;
-  if (levelId === 3) return <ButterflyDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
-  if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
-  if (levelId === 5) return <LotusMaze levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (isFinished) {
+      return (
+        <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center rounded-[2rem] bg-white/80 p-8 text-center shadow-glow">
+          <div className="mb-4 text-5xl">🌙</div>
+          <h2 className="text-3xl font-bold text-gradient">Adventure complete!</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            You reached the end of the lavender quest. Your credits and progress are safely saved for your next visit.
+          </p>
+          <Link to="/map" className="mt-6 inline-block rounded-full bg-button-grad px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow">
+            Return to the map
+          </Link>
+        </div>
+      );
+    }
 
-  return <ComingSoon levelName={level.name} game={level.game} />;
+    if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 2) return <PetalMeadow levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 3) return <ButterflyDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 5) return <LotusMaze levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+
+    return <ComingSoon levelName={level.name} game={level.game} />;
+  })();
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_45%),linear-gradient(135deg,_#f7e9ff_0%,_#d4c8ff_100%)] text-violet-deep">
+      <GameHeader
+        credits={credits}
+        title={level.name}
+        onSkip={() => setShowSkipConfirm(true)}
+        skipDisabled={credits < 5}
+        skipLabel="Skip this level (-5)"
+        helperText={feedback ?? skipHelperText}
+      />
+
+      {showSkipConfirm ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-violet-deep/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[2rem] bg-white/90 p-8 text-center shadow-glow">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-violet-500">Skip level</p>
+            <h3 className="mt-3 text-2xl font-bold text-violet-deep">Are you sure you want to skip this level? -5 credits</h3>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={confirmSkip}
+                className="rounded-full bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-glow"
+              >
+                Skip level
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSkipConfirm(false);
+                  setFeedback(null);
+                }}
+                className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-violet-deep shadow-glow"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{pageContent}</div>
+    </div>
+  );
 }
 
 function ComingSoon({ levelName, game }: { levelName: string; game: string }) {
