@@ -1,44 +1,35 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type ShapeType = "circle" | "square" | "triangle";
-
-type Gate = {
+type Tile = {
   id: number;
-  shape: ShapeType;
-  x: number;
-  y: number;
-  hit: boolean;
+  odd: boolean;
+  icon: string;
+  hue: number;
+  rotate: number;
+  scale: number;
 };
 
-type Particle = {
-  id: number;
-  left: number;
-  top: number;
-  size: number;
-  life: number;
-  color: string;
-  xVel: number;
-  yVel: number;
-};
+const GRID_SMALL = 3;
+const GRID_LARGE = 4;
+const TIME_LIMIT = 28;
+const PENALTY = 2;
 
-const SHAPES: ShapeType[] = ["circle", "square", "triangle"];
-const SHAPE_LABELS: Record<ShapeType, string> = {
-  circle: "CIRCLE",
-  square: "SQUARE",
-  triangle: "TRIANGLE",
-};
+const ITEM_PAIRS = [
+  { base: "🌸", odd: "💮" },
+  { base: "🍓", odd: "🍒" },
+  { base: "🍬", odd: "🍭" },
+  { base: "🍇", odd: "🫐" },
+  { base: "🍩", odd: "🍪" },
+];
 
-const TARGET_SCORE = 20;
-const RUN_TIME = 30;
-const SPAWN_INTERVAL = 1400;
-const GATE_SPEED = 0.08; // percent per ms
+const TILE_COLORS = [288, 312, 340, 260, 308];
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
 
-export default function ShapeShift({
+export default function TapTheOddOne({
   levelId,
   onWin,
   onReturn,
@@ -47,308 +38,182 @@ export default function ShapeShift({
   onWin: () => void;
   onReturn: () => void;
 }) {
-  const [currentShape, setCurrentShape] = useState<ShapeType>("circle");
-  const [lives, setLives] = useState(3);
+  const [gridSize, setGridSize] = useState(GRID_LARGE);
+  const [tiles, setTiles] = useState<Tile[]>(() => []);
   const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
-  const [gates, setGates] = useState<Gate[]>([]);
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [elapsed, setElapsed] = useState(0);
-  const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
-  const [pulse, setPulse] = useState(false);
-  const [shake, setShake] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [status, setStatus] = useState<"playing" | "finished">("playing");
+  const [activePop, setActivePop] = useState<number | null>(null);
+  const [wrongShake, setWrongShake] = useState(false);
+  const completedRef = useRef(false);
+  const nextIdRef = useRef(1);
 
-  const nextGateId = useRef(1);
-  const frameRef = useRef<number | null>(null);
-  const spawnRef = useRef<number | null>(null);
-  const lastTimestamp = useRef<number>(0);
-  const startTime = useRef<number>(0);
+  const createBoard = useCallback((size: number) => {
+    const theme = ITEM_PAIRS[Math.floor(Math.random() * ITEM_PAIRS.length)];
+    const baseHue = TILE_COLORS[Math.floor(Math.random() * TILE_COLORS.length)];
+    const oddIndex = Math.floor(Math.random() * size * size);
 
-  const shapeClass = `shape-shift-player ${currentShape}`;
-
-  const createGate = useCallback(() => {
-    setGates((prev) => [
-      ...prev,
-      {
-        id: nextGateId.current++,
-        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-        x: 25 + Math.random() * 50,
-        y: 102,
-        hit: false,
-      },
-    ]);
+    return Array.from({ length: size * size }, (_, index) => {
+      const odd = index === oddIndex;
+      const icon = odd ? theme.odd : theme.base;
+      return {
+        id: nextIdRef.current++,
+        odd,
+        icon,
+        hue: baseHue + (odd ? 8 : 0),
+        rotate: odd ? randomBetween(-6, 6) : randomBetween(-3, 3),
+        scale: odd ? 1.06 : 1,
+      };
+    });
   }, []);
 
-  const spawnParticles = useCallback((x: number, y: number, color: string) => {
-    setParticles((prev) => [
-      ...prev,
-      ...Array.from({ length: 8 }).map(() => ({
-        id: Date.now() + Math.random(),
-        left: x,
-        top: y,
-        size: randomBetween(7, 16),
-        life: 1,
-        color,
-        xVel: randomBetween(-0.9, 0.9),
-        yVel: randomBetween(-1.6, -0.6),
-      })),
-    ]);
-  }, []);
-
-  const handleShapeChange = useCallback((shape: ShapeType) => {
-    setCurrentShape(shape);
-    setPulse(true);
-    window.setTimeout(() => setPulse(false), 140);
-  }, []);
-
-  const setPlayerShape = useCallback(
-    (key: string) => {
-      if (key === "1") handleShapeChange("circle");
-      if (key === "2") handleShapeChange("square");
-      if (key === "3") handleShapeChange("triangle");
-    },
-    [handleShapeChange],
-  );
-
-  const endRun = useCallback(
-    (result: "won" | "lost") => {
-      if (status !== "playing") return;
-      setStatus(result);
-      if (result === "won") onWin();
-    },
-    [onWin, status],
-  );
+  const resetBoard = useCallback(() => {
+    setTiles(createBoard(gridSize));
+    setActivePop(null);
+  }, [createBoard, gridSize]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      setPlayerShape(event.key);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setPlayerShape]);
+    const handleResize = () => setGridSize(window.innerWidth < 640 ? GRID_SMALL : GRID_LARGE);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
-    const animate = (timestamp: number) => {
-      if (!startTime.current) startTime.current = timestamp;
-      const delta = timestamp - lastTimestamp.current;
-      const runTime = timestamp - startTime.current;
-      lastTimestamp.current = timestamp;
+    resetBoard();
+  }, [gridSize, resetBoard]);
 
-      setElapsed(Math.min(RUN_TIME, runTime / 1000));
-      setParticles((prev) =>
-        prev
-          .map((p) => ({ ...p, left: p.left + p.xVel * delta * 0.05, top: p.top + p.yVel * delta * 0.05, life: p.life - delta / 900 }))
-          .filter((p) => p.life > 0),
-      );
-
-      setGates((prev) => {
-        const next = prev
-          .map((gate) => ({ ...gate, y: gate.y - GATE_SPEED * delta }))
-          .filter((gate) => gate.y > -12);
-
-        next.forEach((gate) => {
-          if (gate.hit) return;
-          if (gate.y <= 14) {
-            gate.hit = true;
-            if (gate.shape === currentShape) {
-              setScore((s) => s + 1);
-              setCombo((c) => c + 1);
-              setPulse(true);
-              spawnParticles(gate.x, 15, gate.shape === "triangle" ? "#ffd6fa" : gate.shape === "square" ? "#c8f4ff" : "#fff1a8");
-              window.setTimeout(() => setPulse(false), 220);
-            } else {
-              setLives((l) => Math.max(0, l - 1));
-              setCombo(0);
-              setShake(true);
-              window.setTimeout(() => setShake(false), 240);
-            }
-          }
-        });
-
-        return next;
-      });
-
-      if (score >= TARGET_SCORE || runTime >= RUN_TIME * 1000) {
-        if (lives > 0 && status === "playing") {
-          endRun("won");
+  useEffect(() => {
+    if (status !== "playing") return;
+    const timer = window.setInterval(() => {
+      setTimeLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          setStatus("finished");
+          return 0;
         }
-      }
-
-      if (lives <= 0 && status === "playing") {
-        endRun("lost");
-      }
-
-      frameRef.current = window.requestAnimationFrame(animate);
-    };
-
-    frameRef.current = window.requestAnimationFrame(animate);
-    spawnRef.current = window.setInterval(createGate, SPAWN_INTERVAL);
-    createGate();
-
-    return () => {
-      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
-      if (spawnRef.current) window.clearInterval(spawnRef.current);
-    };
-  }, [createGate, currentShape, endRun, lives, score, spawnParticles, status]);
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [status]);
 
   useEffect(() => {
-    if (score >= TARGET_SCORE && status === "playing") {
-      endRun("won");
+    if (status === "finished" && !completedRef.current) {
+      completedRef.current = true;
+      onWin();
     }
-  }, [endRun, score, status]);
+  }, [onWin, status]);
 
-  const resultMessage = status === "won" ? "Perfect Flow 💜" : "Try Again";
-  const showWin = status !== "playing";
+  const handleTileClick = useCallback(
+    (tile: Tile) => {
+      if (status !== "playing") return;
+      if (tile.odd) {
+        setScore((current) => current + 1);
+        setActivePop(tile.id);
+        window.setTimeout(() => setActivePop(null), 220);
+        resetBoard();
+        return;
+      }
 
-  const comboGlow = combo >= 3 ? "shadow-glow" : "";
+      setTimeLeft((current) => Math.max(0, current - PENALTY));
+      setWrongShake(true);
+      window.setTimeout(() => setWrongShake(false), 220);
+    },
+    [resetBoard, status],
+  );
+
+  const explanation = useMemo(
+    () =>
+      status === "playing"
+        ? "Tap the odd item before the lavender timer runs out."
+        : "Your sharp eyes finished the round.",
+    [status],
+  );
+
+  const gridColumns = gridSize;
+  const boardClasses = `odd-one-board ${wrongShake ? "odd-one-board-shake" : ""}`;
 
   return (
-    <main className={`relative min-h-screen overflow-hidden shape-shift-bg ${shake ? "shape-shift-shake" : ""}`}>
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        {Array.from({ length: 16 }).map((_, idx) => (
-          <span
-            key={idx}
-            className="shape-shift-star"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 90}%`,
-              width: `${4 + Math.random() * 6}px`,
-              height: `${4 + Math.random() * 6}px`,
-              animationDelay: `${Math.random() * 4}s`,
-            }}
-          />
-        ))}
-      </div>
+    <main className="relative min-h-screen overflow-hidden odd-one-bg select-none">
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.35),_transparent_42%),radial-gradient(circle_at_80%_20%,_rgba(191,148,255,0.18),_transparent_35%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,_rgba(255,255,255,0.28),_transparent_46%)]" />
 
-      <header className="relative z-20 flex flex-col gap-3 px-4 py-5 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
-        <Link to="/map" className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep hover:scale-105 transition-transform shadow-soft">
+      <header className="relative z-20 mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
+        <Link
+          to="/map"
+          className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep hover:scale-105 transition-transform shadow-soft"
+        >
           ← Map
         </Link>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-white">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <div className="rounded-full glass px-4 py-2 text-violet-deep shadow-soft">
-            <span className="font-semibold">Lives</span> <span className="ml-2">{"❤️".repeat(lives)}{lives === 0 ? "💔" : ""}</span>
+            <span className="text-xs uppercase tracking-[0.32em] text-violet-500">Score</span>
+            <div className="mt-1 text-2xl font-semibold text-violet-deep tabular-nums">{score}</div>
           </div>
           <div className="rounded-full glass px-4 py-2 text-violet-deep shadow-soft">
-            <span className="font-semibold">Score</span> <span className="ml-2 tabular-nums">{score}</span>
-          </div>
-          <div className={`rounded-full glass px-4 py-2 text-violet-deep shadow-soft ${combo >= 3 ? "bg-violet-200/10 text-white" : ""}`}>
-            <span className="font-semibold">Combo</span> <span className="ml-2 tabular-nums">{combo}</span>
+            <span className="text-xs uppercase tracking-[0.32em] text-violet-500">Timer</span>
+            <div className={`mt-1 text-2xl font-semibold tabular-nums ${timeLeft <= 6 ? "text-destructive" : "text-violet-deep"}`}>{timeLeft}s</div>
           </div>
         </div>
       </header>
 
-      <section className="relative z-20 mx-auto max-w-5xl px-4 pb-8 sm:px-6">
-        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-[0_0_120px_rgba(150,100,255,0.12)] backdrop-blur-xl">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="relative z-20 mx-auto max-w-6xl px-4 pb-10 sm:px-6">
+        <div className="rounded-[2rem] border border-white/10 bg-white/10 p-6 shadow-glow backdrop-blur-xl">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-violet-200/70">Shape Shift</p>
-              <h1 className="mt-2 text-3xl font-bold text-white">Keep the flow. Match the gate.</h1>
+              <p className="text-xs uppercase tracking-[0.32em] text-violet-200/70">Tap the Odd One</p>
+              <h1 className="mt-3 text-4xl font-bold text-white">Sharp Eyes 💜</h1>
             </div>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {SHAPES.map((shape, index) => (
-                <button
-                  key={shape}
-                  type="button"
-                  onClick={() => handleShapeChange(shape)}
-                  className={`rounded-2xl border border-white/15 px-4 py-3 text-sm font-semibold transition ${currentShape === shape ? "bg-violet-400/20 text-white shadow-glow" : "bg-white/5 text-violet-100 hover:bg-white/10"}`}
-                >
-                  <span className="block text-[1.05rem]">{index + 1}</span>
-                  <span className="block text-xs uppercase tracking-[0.2em]">{SHAPE_LABELS[shape]}</span>
-                </button>
-              ))}
-            </div>
+            <p className="max-w-xl text-sm leading-6 text-violet-deep/80">Find the subtly different lavender item in each grid. A wrong tap steals time, so stay quick and focused.</p>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-3xl bg-violet-950/70 px-4 py-3 text-white shadow-soft">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-violet-300/70">Goal</p>
-              <p className="mt-2 text-sm">Survive 30 seconds or reach {TARGET_SCORE} correct matches.</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-3xl bg-violet-950/60 p-4 text-sm text-violet-100 shadow-soft">
+              <p className="text-[10px] uppercase tracking-[0.34em] text-violet-300/70">How to play</p>
+              <p className="mt-3">Tap the only item that differs from the rest. It is easy to miss, but not impossible to catch.</p>
             </div>
-            <div className="rounded-3xl bg-violet-950/70 px-4 py-3 text-white shadow-soft">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-violet-300/70">Current Shape</p>
-              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-white/10 px-3 py-2 text-sm text-white shadow-glow">
-                <span className="size-8 grid place-items-center rounded-full bg-violet-500/20 p-2 text-lg">{currentShape === "circle" ? "○" : currentShape === "square" ? "◼" : "△"}</span>
-                <span className="font-semibold uppercase tracking-[0.15em]">{SHAPE_LABELS[currentShape]}</span>
-              </div>
+            <div className="rounded-3xl bg-violet-950/60 p-4 text-sm text-violet-100 shadow-soft">
+              <p className="text-[10px] uppercase tracking-[0.34em] text-violet-300/70">Penalty</p>
+              <p className="mt-3">Wrong taps deduct {PENALTY} seconds from the timer. Keep your rhythm and don’t hesitate.</p>
             </div>
-            <div className="rounded-3xl bg-violet-950/70 px-4 py-3 text-white shadow-soft">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-violet-300/70">Tip</p>
-              <p className="mt-2 text-sm">Switch shapes before gates arrive. Fast reactions keep the combo glowing.</p>
+            <div className="rounded-3xl bg-violet-950/60 p-4 text-sm text-violet-100 shadow-soft">
+              <p className="text-[10px] uppercase tracking-[0.34em] text-violet-300/70">Goal</p>
+              <p className="mt-3">Score as many correct taps as possible before time runs out.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="relative z-20 mx-auto max-w-5xl px-4 pb-16 sm:px-6">
-        <div className="shape-shift-arena rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-glow backdrop-blur-xl overflow-hidden">
-          <div className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full bg-violet-400/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-violet-100 shadow-soft">
-            Keep moving forward. Your shape is the key.
-          </div>
-
-          <div className="relative mx-auto mt-8 h-[420px] max-w-4xl">
-            {gates.map((gate) => (
-              <div
-                key={gate.id}
-                className={`shape-shift-gate ${gate.shape} ${gate.hit ? "shape-shift-gate-hit" : ""}`}
-                style={{ left: `${gate.x}%`, top: `${gate.y}%` }}
-              >
-                <span className="shape-shift-gate-label">{SHAPE_LABELS[gate.shape]}</span>
-              </div>
-            ))}
-
-            <div className="shape-shift-player-container">
-              <div className={`${shapeClass} ${pulse ? "shape-shift-player-pulse" : ""}`}>
-                <span className="shape-shift-player-label">{SHAPE_LABELS[currentShape]}</span>
-              </div>
-            </div>
-
-            {particles.map((particle) => (
-              <span
-                key={particle.id}
-                className="shape-shift-particle"
-                style={{
-                  left: `${particle.left}%`,
-                  top: `${particle.top}%`,
-                  width: `${particle.size}px`,
-                  height: `${particle.size}px`,
-                  opacity: particle.life,
-                  background: particle.color,
-                  transform: `translate(-50%, -50%) rotate(${particle.id % 360}deg)`,
-                }}
-              />
-            ))}
-          </div>
+      <section className="relative z-20 mx-auto max-w-6xl px-4 sm:px-6 pb-16">
+        <div className={boardClasses} style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}>
+          {tiles.map((tile) => (
+            <button
+              key={tile.id}
+              type="button"
+              onClick={() => handleTileClick(tile)}
+              className={`odd-one-tile ${tile.odd ? "odd" : ""} ${activePop === tile.id ? "odd-one-pop" : ""}`}
+              style={{ "--hue": tile.hue, "--rotate": `${tile.rotate}deg`, "--scale": tile.scale } as React.CSSProperties}
+            >
+              <span className="odd-one-icon">{tile.icon}</span>
+            </button>
+          ))}
         </div>
+        <p className="mt-6 text-center text-sm text-violet-deep/70">{explanation}</p>
       </section>
 
-      {showWin && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-violet-950/70 px-4 py-6 backdrop-blur-lg">
-          <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#1d0636]/95 p-7 text-center shadow-[0_0_80px_rgba(130,58,255,0.35)]">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 text-4xl text-white shadow-glow">
-              {status === "won" ? "💜" : "⚡"}
-            </div>
-            <h2 className="text-3xl font-bold text-white">{resultMessage}</h2>
-            <p className="mt-3 text-sm text-violet-200/80">
-              {status === "won"
-                ? "You kept the flow and matched the gates."
-                : "Shape mismatch ended the run. Try again and keep the combo alive."}
-            </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="rounded-full bg-violet-500 px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:brightness-110"
-              >
-                Replay
-              </button>
-              <button
-                type="button"
-                onClick={onReturn}
-                className="rounded-full border border-violet-300/30 bg-white/10 px-5 py-3 text-sm font-semibold text-violet-100 shadow-soft transition hover:bg-white/15"
-              >
-                Return to Map
-              </button>
-            </div>
+      {status === "finished" && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-violet-deep/40 px-4 py-6 backdrop-blur-lg">
+          <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#1f0b33]/95 p-8 text-center shadow-[0_0_80px_rgba(140,80,255,0.32)]">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-500 text-4xl text-white shadow-glow">💜</div>
+            <h2 className="text-3xl font-bold text-white">Sharp Eyes 💜</h2>
+            <p className="mt-3 text-sm text-violet-200/80">You scored {score} correct taps in {TIME_LIMIT} seconds. Great reflexes!</p>
+            <button
+              type="button"
+              onClick={onReturn}
+              className="mt-6 inline-flex rounded-full bg-button-grad px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow transition hover:brightness-105"
+            >
+              Return to Map
+            </button>
           </div>
         </div>
       )}

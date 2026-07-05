@@ -591,6 +591,71 @@
   0%, 100% { transform: scaleX(1); }
   50%      { transform: scaleX(0.55); }
 }
+
+/* Tap the Odd One */
+.odd-one-bg {
+  background:
+    radial-gradient(circle at 20% 15%, oklch(0.92 0.14 305 / 0.35), transparent 42%),
+    radial-gradient(circle at 82% 16%, oklch(0.84 0.14 280 / 0.24), transparent 40%),
+    linear-gradient(180deg, oklch(0.96 0.10 290 / 0.95) 0%, oklch(0.86 0.14 290 / 0.75) 52%, oklch(0.77 0.16 300 / 0.85) 100%);
+}
+.odd-one-board {
+  display: grid;
+  gap: 0.9rem;
+  max-width: min(52rem, 100%);
+  margin: 0 auto;
+  padding: 1rem;
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 24px 80px rgba(120, 65, 190, 0.12);
+  backdrop-filter: blur(20px);
+}
+.odd-one-board-shake {
+  animation: odd-one-shake 0.22s ease-in-out;
+}
+.odd-one-tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 1.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
+  box-shadow: 0 10px 30px rgba(127, 82, 190, 0.16);
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: clamp(2.1rem, 4vw, 3rem);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transform: perspective(500px) translateZ(0) rotate(var(--rotate, 0)) scale(var(--scale, 1));
+}
+.odd-one-tile:hover {
+  transform: perspective(500px) translateZ(0) rotate(var(--rotate, 0)) scale(calc(var(--scale, 1) + 0.04));
+  box-shadow: 0 16px 40px rgba(143, 85, 238, 0.22);
+}
+.odd-one-tile.odd {
+  border-color: hsl(var(--hue), 80%, 76%);
+}
+.odd-one-tile.odd-one-pop {
+  animation: odd-one-pop 0.22s ease-out;
+}
+.odd-one-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.35));
+}
+@keyframes odd-one-pop {
+  0% { transform: perspective(500px) translateZ(0) rotate(var(--rotate, 0)) scale(var(--scale, 1)); }
+  50% { transform: perspective(500px) translateZ(0) rotate(var(--rotate, 0)) scale(calc(var(--scale, 1) + 0.16)); }
+  100% { transform: perspective(500px) translateZ(0) rotate(var(--rotate, 0)) scale(var(--scale, 1)); }
+}
+@keyframes odd-one-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
 @keyframes butterfly-shimmer {
   0%, 100% { filter: drop-shadow(0 0 18px oklch(0.85 0.22 340 / 0.85)) drop-shadow(0 0 32px oklch(0.78 0.22 305 / 0.55)); }
   50%      { filter: drop-shadow(0 0 28px oklch(0.92 0.24 340 / 1)) drop-shadow(0 0 48px oklch(0.85 0.24 305 / 0.8)); }

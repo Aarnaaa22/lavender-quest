@@ -15,7 +15,7 @@ export const LEVELS: Level[] = [
   { id: 3,  name: "Butterfly Glade",  game: "Butterfly Net",   emoji: "🦋", x: 46, y: 70, description: "Use your net to catch butterflies and drop them into the lavender basket." },
   { id: 4,  name: "Berry Trail",      game: "Berry Run",       emoji: "🍇", x: 58, y: 55, description: "Run the winding trail and collect every berry." },
   { id: 5,  name: "Tide Cove",        game: "Wave Balance",    emoji: "🌊", x: 70, y: 78, description: "Balance on the tide as soft waves roll in." },
-  { id: 6,  name: "Potion Hut",       game: "Potion Mix",      emoji: "🧪", x: 80, y: 62, description: "Brew a swirling lilac potion from rare ingredients." },
+  { id: 6,  name: "Potion Hut",       game: "Tap the Odd One", emoji: "💜", x: 80, y: 62, description: "Spot the subtly different lavender item in each grid before time runs out." },
   { id: 7,  name: "Shell Bay",        game: "Shell Sort",      emoji: "🐚", x: 86, y: 44, description: "Sort glittering shells by color and shape." },
   { id: 8,  name: "Firefly Cave",     game: "Firefly Maze",    emoji: "✨", x: 70, y: 30, description: "Follow the fireflies through a glowing cave maze." },
   { id: 9,  name: "Cloud Bakery",     game: "Bakery Rush",     emoji: "🧁", x: 52, y: 22, description: "Serve cloud pastries to hungry sky bunnies." },

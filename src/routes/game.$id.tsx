@@ -116,17 +116,16 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
     onStart: () => {},
   },
   6: {
-    level: 6, title: "Shape Shift", emoji: "🔷",
-    tagline: "Switch to the right shape before the gate arrives.",
+    level: 6, title: "Tap the Odd One", emoji: "💜",
+    tagline: "Spot the subtle odd item in the lavender grid.",
     rules: [
-      "Auto-run forward while gates approach from the top.",
-      "Press 1 for circle, 2 for square, 3 for triangle.",
-      "Match the gate shape to avoid losing a life.",
-      "Build combos for extra glow and bonus points.",
+      "Click the one item that looks slightly different.",
+      "Correct taps increase your score and generate a new grid.",
+      "Wrong taps subtract a little time.",
+      "Keep the pace fast and your eyes sharp.",
     ],
-    controls: [
-      "1 → circle", "2 → square", "3 → triangle"],
-    goal: "Survive 30 seconds or score 20 correct matches.",
+    controls: ["Click the odd item"],
+    goal: "Score as many correct taps as possible before time runs out.",
     onStart: () => {},
   },
 };
