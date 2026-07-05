@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AmbientBackground } from "@/components/AmbientBackground";
 
 import { LEVELS, TOTAL_LEVELS, type Level } from "@/lib/levels";
@@ -23,10 +23,6 @@ function MapPage() {
   const [openLevel, setOpenLevel] = useState<Level | null>(null);
   const [mounted, setMounted] = useState(false);
   const [clock, setClock] = useState(() => new Date());
-  const [tilt, setTilt] = useState({ x: 14, y: -10 });
-  const [isDragging, setIsDragging] = useState(false);
-  const pointerRef = useRef<{ x: number; y: number } | null>(null);
-  const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setProgress(loadProgress());
@@ -54,31 +50,41 @@ function MapPage() {
     { left: "74%", top: "62%", delay: "2s", duration: "18s" },
   ];
 
-  const onPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    pointerRef.current = { x: event.clientX, y: event.clientY };
-    setIsDragging(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
+  const roadsideDetails = [
+    { id: "stall-1", left: "26%", top: "64%", label: "Candy stall", icon: "🍭" },
+    { id: "cart-1", left: "54%", top: "52%", label: "Ice cream cart", icon: "🍦" },
+    { id: "deco-1", left: "70%", top: "72%", label: "Twinkle post", icon: "✨" },
+    { id: "deco-2", left: "38%", top: "34%", label: "Sweet sign", icon: "🍬" },
+  ];
+
+  const getRoadCurve = useCallback((from: Level, to: Level) => {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const controlOffset = Math.min(18, Math.max(10, Math.abs(dx) * 0.7 + Math.abs(dy) * 0.4));
+    const controlX1 = from.x + dx * 0.35 + (dy > 0 ? controlOffset : -controlOffset);
+    const controlY1 = from.y + dy * 0.25 - controlOffset * 0.45;
+    const controlX2 = from.x + dx * 0.65 + (dy > 0 ? -controlOffset : controlOffset);
+    const controlY2 = from.y + dy * 0.75 + controlOffset * 0.55;
+    return `M ${from.x} ${from.y} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${to.x} ${to.y}`;
   }, []);
 
-  const onPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (!pointerRef.current) return;
-    const deltaX = event.clientX - pointerRef.current.x;
-    const deltaY = event.clientY - pointerRef.current.y;
-    pointerRef.current = { x: event.clientX, y: event.clientY };
-    setTilt((current) => ({
-      x: Math.max(2, Math.min(24, current.x - deltaY * 0.08)),
-      y: Math.max(-24, Math.min(24, current.y + deltaX * 0.08)),
-    }));
-  }, []);
-
-  const onPointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    pointerRef.current = null;
-    setIsDragging(false);
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  }, []);
+  const hours = clock.getHours() % 12;
+  const minutes = clock.getMinutes();
+  const seconds = clock.getSeconds();
+  const hourAngle = hours * 30 + minutes * 0.5;
+  const minuteAngle = minutes * 6 + seconds * 0.1;
+  const secondAngle = seconds * 6;
 
   const isUnlocked = (id: number) => id <= progress.currentLevel;
   const isDone = (id: number) => progress.completed.includes(id);
+
+  const handleLevelSelect = useCallback(
+    (level: Level) => {
+      if (!isUnlocked(level.id)) return;
+      setOpenLevel(level);
+    },
+    [isUnlocked],
+  );
 
   // Re-load progress when modal closes (so completions from /game/$id reflect)
   useEffect(() => {
@@ -119,149 +125,192 @@ function MapPage() {
         </button>
       </header>
 
-      <div className="relative z-10 max-w-6xl mx-auto">
-        <div
-          ref={mapRef}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          className={`relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden glass shadow-glow transition-all duration-700 ${
-            mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
-          } ${isDragging ? "map-dragging" : ""}`}
-          style={{
-            perspective: 1200,
-            transformStyle: "preserve-3d",
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              transform: `translateZ(0px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-              transformStyle: "preserve-3d",
-              transition: isDragging ? "none" : "transform 0.25s ease-out",
-            }}
-          >
-            <img
-              src={islandImg}
-              alt="Lavender island map"
-              className="absolute inset-0 size-full object-cover"
-              width={1536}
-              height={1024}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-violet-deep/30" />
-
-            {clouds.map((cloud, index) => (
-              <div
-                key={index}
-                className={`absolute ${cloud.size} rounded-full bg-white/70 blur-0 opacity-80 map-cloud`}
-                style={{ left: cloud.left, top: cloud.top, animationDelay: cloud.delay }}
-              />
-            ))}
-
-            {boats.map((boat, index) => (
-              <div
-                key={index}
-                className="absolute flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold text-violet-950 map-boat"
-                style={{ left: boat.left, top: boat.top, animationDelay: boat.delay, animationDuration: boat.duration }}
-              >
-                ⛵
-              </div>
-            ))}
-
-            {LEVELS.map((l) => (
-              <div
-                key={`zone-${l.id}`}
-                className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-white/5 shadow-soft map-zone"
-                style={{ left: `${l.x}%`, top: `${l.y}%`, width: `${l.id * 4 + 28}px`, height: `${l.id * 4 + 24}px` }}
-              />
-            ))}
-
-            <div
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-4xl"
-              style={{ left: `${LEVELS[TOTAL_LEVELS - 1].x}%`, top: `${LEVELS[TOTAL_LEVELS - 1].y - 8}%` }}
-            >
-              🏰
-            </div>
-            <div
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-2xl"
-              style={{ left: `${LEVELS[TOTAL_LEVELS - 1].x + 10}%`, top: `${LEVELS[TOTAL_LEVELS - 1].y + 8}%` }}
-            >
-              🕰️
-            </div>
-
-            {/* Dotted paths */}
-            <svg className="absolute inset-0 size-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-              {LEVELS.slice(0, -1).map((l, i) => {
-                const next = LEVELS[i + 1];
-                const unlocked = isDone(l.id);
-                return (
-                  <line
-                    key={l.id}
-                    x1={l.x}
-                    y1={l.y}
-                    x2={next.x}
-                    y2={next.y}
-                    stroke={unlocked ? "white" : "rgba(255,255,255,0.5)"}
-                    strokeWidth={0.5}
-                    strokeDasharray="1.2 1.6"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                    style={{
-                      filter: unlocked
-                        ? "drop-shadow(0 0 6px rgba(255,200,255,0.9))"
-                        : "drop-shadow(0 1px 2px rgba(80,40,120,0.4))",
-                      animation: unlocked ? "dash 30s linear infinite" : undefined,
-                    }}
-                  />
-                );
-              })}
-            </svg>
-
-            {/* Level nodes */}
-            {LEVELS.map((l) => {
-              const unlocked = isUnlocked(l.id);
-              const done = isDone(l.id);
-              const isCurrent = l.id === progress.currentLevel;
-              return (
-                <button
-                  key={l.id}
-                  onClick={() => unlocked && setOpenLevel(l)}
-                  disabled={!unlocked}
-                  className={`group absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                    unlocked ? "cursor-pointer hover:scale-110" : "cursor-not-allowed"
-                  }`}
-                  style={{ left: `${l.x}%`, top: `${l.y}%` }}
-                  aria-label={`${l.name} — ${unlocked ? (done ? "completed" : "unlocked") : "locked"}`}
-                >
-                  <span
-                    className={`flex items-center justify-center size-12 sm:size-14 rounded-full text-2xl shadow-node transition-all ${
-                      done
-                        ? "bg-button-grad text-white"
-                        : unlocked
-                          ? "bg-white/95 text-violet-deep"
-                          : "bg-white/40 text-violet-deep/50 backdrop-blur"
-                    } ${isCurrent ? "animate-pulse-glow" : ""}`}
-                  >
-                    {done ? "💜" : unlocked ? l.emoji : "🔒"}
-                  </span>
-                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-full glass px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-violet-deep opacity-0 group-hover:opacity-100 transition-opacity">
-                    {l.name}
-                  </span>
-                </button>
-              );
-            })}
-
-            {/* Player marker */}
-            <div
-              className="absolute -translate-x-1/2 pointer-events-none transition-all duration-700 ease-out"
-              style={{ left: `${player.x}%`, top: `${player.y}%`, transform: `translate(-50%, calc(-50% - 38px))` }}
-            >
-              <span className="text-3xl animate-float drop-shadow-[0_4px_8px_rgba(120,60,180,0.45)]">
-                🧚‍♀️
-              </span>
-            </div>
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <div className="flex justify-end pb-4">
+          <div className="inline-flex items-center gap-2 rounded-full glass px-4 py-2 text-sm font-semibold text-violet-deep shadow-glow">
+            <span className="text-xl">🧭</span>
+            Top-down map view
           </div>
         </div>
+
+        <div className="relative overflow-hidden rounded-[2rem] transition-all duration-700 map-top-frame">
+          <div
+            className={`relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden glass shadow-glow transition-all duration-700 ${
+              mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            }`}
+            style={{
+              perspective: 1200,
+              transformStyle: "preserve-3d",
+            }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                transform: "translate(0, 0) scale(1)",
+                transformStyle: "preserve-3d",
+                transition: "transform 0.8s ease-out",
+              }}
+            >
+              <div
+                className="absolute inset-0 map-layer map-background-layer"
+                style={{
+                  transform: "translateZ(0)",
+                }}
+              >
+                <div className="absolute inset-0 bg-sky-depth" />
+                {clouds.map((cloud, index) => (
+                  <div
+                    key={index}
+                    className={`absolute ${cloud.size} rounded-full bg-white/70 blur-0 opacity-85 map-cloud`}
+                    style={{ left: cloud.left, top: cloud.top, animationDelay: cloud.delay }}
+                  />
+                ))}
+              </div>
+
+              <div
+                className="absolute inset-0 map-layer map-midground-layer"
+                style={{
+                  transform: "translateZ(0)",
+                }}
+              >
+                <img
+                  src={islandImg}
+                  alt="Lavender island map"
+                  className="absolute inset-0 size-full object-cover"
+                  width={1536}
+                  height={1024}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-violet-deep/30" />
+                {boats.map((boat, index) => (
+                  <div
+                    key={index}
+                    className="absolute flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold text-violet-950 map-boat"
+                    style={{ left: boat.left, top: boat.top, animationDelay: boat.delay, animationDuration: boat.duration }}
+                  >
+                    ⛵
+                  </div>
+                ))}
+                <div
+                  className="absolute -translate-x-1/2 -translate-y-1/2 text-4xl"
+                  style={{ left: `${LEVELS[TOTAL_LEVELS - 1].x}%`, top: `${LEVELS[TOTAL_LEVELS - 1].y - 8}%` }}
+                >
+                  🏰
+                </div>
+                <div
+                  className="absolute -translate-x-1/2 -translate-y-1/2 text-2xl"
+                  style={{ left: `${LEVELS[TOTAL_LEVELS - 1].x + 10}%`, top: `${LEVELS[TOTAL_LEVELS - 1].y + 8}%` }}
+                >
+                  🕰️
+                </div>
+              </div>
+
+              <div
+                className="absolute inset-0 map-layer map-foreground-layer"
+                style={{
+                  transform: "translateZ(0)",
+                }}
+              >
+                <svg className="absolute inset-0 size-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="roadGradient" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="rgba(255,221,255,0.95)" />
+                      <stop offset="50%" stopColor="rgba(241,185,255,0.95)" />
+                      <stop offset="100%" stopColor="rgba(195,152,255,0.95)" />
+                    </linearGradient>
+                    <linearGradient id="roadHighlight" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.9)" />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0.2)" />
+                    </linearGradient>
+                  </defs>
+                  {LEVELS.slice(0, -1).map((l, i) => {
+                    const next = LEVELS[i + 1];
+                    const path = getRoadCurve(l, next);
+                    return (
+                      <g key={`road-${l.id}`}>
+                        <path
+                          d={path}
+                          className="map-road"
+                          stroke="url(#roadGradient)"
+                          strokeWidth="5"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                        <path
+                          d={path}
+                          className="map-road map-road-highlight"
+                          stroke="url(#roadHighlight)"
+                          strokeWidth="2"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {roadsideDetails.map((detail) => (
+                  <div
+                    key={detail.id}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center gap-1 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-semibold text-violet-deep shadow-soft backdrop-blur"
+                    style={{ left: detail.left, top: detail.top }}
+                  >
+                    <span>{detail.icon}</span>
+                    <span>{detail.label}</span>
+                  </div>
+                ))}
+
+                {LEVELS.map((l) => (
+                  <div
+                    key={`zone-${l.id}`}
+                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-white/5 shadow-soft map-zone"
+                    style={{ left: `${l.x}%`, top: `${l.y}%`, width: `${l.id * 4 + 28}px`, height: `${l.id * 4 + 24}px` }}
+                  />
+                ))}
+
+
+                {LEVELS.map((l) => {
+                  const unlocked = isUnlocked(l.id);
+                  const done = isDone(l.id);
+                  const isCurrent = l.id === progress.currentLevel;
+                  return (
+                    <button
+                      key={l.id}
+                      onClick={() => handleLevelSelect(l)}
+                      disabled={!unlocked}
+                      className={`group absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                        unlocked ? "cursor-pointer hover:scale-110" : "cursor-not-allowed"
+                      }`}
+                      style={{ left: `${l.x}%`, top: `${l.y}%` }}
+                      aria-label={`${l.name} — ${unlocked ? (done ? "completed" : "unlocked") : "locked"}`}
+                    >
+                      <span
+                        className={`flex items-center justify-center size-12 sm:size-14 rounded-full text-2xl shadow-node transition-all ${
+                          done
+                            ? "bg-button-grad text-white"
+                            : unlocked
+                              ? "bg-white/95 text-violet-deep"
+                              : "bg-white/40 text-violet-deep/50 backdrop-blur"
+                        } ${isCurrent ? "animate-pulse-glow" : ""}`}
+                      >
+                        {done ? "💜" : unlocked ? l.emoji : "🔒"}
+                      </span>
+                      <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-full glass px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-violet-deep opacity-0 group-hover:opacity-100 transition-opacity">
+                        {l.name}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                <div
+                  className="absolute -translate-x-1/2 pointer-events-none transition-all duration-700 ease-out map-player-shadow"
+                  style={{ left: `${player.x}%`, top: `${player.y}%`, transform: `translate(-50%, calc(-50% - 38px))` }}
+                >
+                  <span className="text-3xl animate-float drop-shadow-[0_4px_14px_rgba(120,60,180,0.5)]">
+                    🧚‍♀️
+                  </span>
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
 
         {/* Legend */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-violet-deep">
