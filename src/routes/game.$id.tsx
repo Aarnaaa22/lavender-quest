@@ -6,7 +6,7 @@ import PetalMeadow from "@/components/games/PetalMeadow";
 import ButterflyDrift from "@/components/games/ButterflyDrift";
 import BerryRush from "@/components/games/BerryRush";
 import LotusMaze from "@/components/games/LotusMaze";
-import ShapeShift from "@/components/games/ShapeShift";
+import ShellGarland from "@/components/games/ShellGarland";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
 
@@ -126,6 +126,19 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
     ],
     controls: ["Click the odd item"],
     goal: "Score as many correct taps as possible before time runs out.",
+    onStart: () => {},
+  },
+  7: {
+    level: 7, title: "Shell Garland", emoji: "🐚",
+    tagline: "Rebuild the lavender beach garland with shells and charms.",
+    rules: [
+      "Match the exact target garland pattern using the pieces below.",
+      "Drag shells and charms into the empty slots on the string.",
+      "Correct placements glow softly; wrong drops reject with a shake.",
+      "The pattern randomizes each new game.",
+    ],
+    controls: ["Drag and drop items into slots"],
+    goal: "Recreate the full garland pattern before the timer ends.",
     onStart: () => {},
   },
 };
@@ -271,6 +284,7 @@ function GamePage() {
     if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 5) return <LotusMaze levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 6) return <ShapeShift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 7) return <ShellGarland levelId={levelId} onWin={onWin} onReturn={onReturn} />;
 
     return <ComingSoon levelName={level.name} game={level.game} />;
   })();
