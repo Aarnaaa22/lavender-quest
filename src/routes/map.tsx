@@ -19,7 +19,7 @@ export const Route = createFileRoute("/map")({
 });
 
 function MapPage() {
-  const [progress, setProgress] = useState<Progress>({ currentLevel: 1, completed: [] });
+  const [progress, setProgress] = useState<Progress>({ currentLevel: 1, completed: [], credits: 5 });
   const [openLevel, setOpenLevel] = useState<Level | null>(null);
   const [mounted, setMounted] = useState(false);
   const [clock, setClock] = useState(() => new Date());

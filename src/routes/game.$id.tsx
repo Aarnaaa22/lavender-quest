@@ -7,6 +7,7 @@ import ButterflyDrift from "@/components/games/ButterflyDrift";
 import BerryRush from "@/components/games/BerryRush";
 import LotusMaze from "@/components/games/LotusMaze";
 import ShellGarland from "@/components/games/ShellGarland";
+import ShapeShift from "@/components/games/ShapeShift";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
 
@@ -278,7 +279,7 @@ function GamePage() {
       );
     }
 
-    if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    
     if (levelId === 2) return <PetalMeadow levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 3) return <ButterflyDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
