@@ -293,7 +293,7 @@ export default function ShellGarland({
                 return (
                   <div
                     key={`slot-${index}`}
-                    ref={(el) => (slotRefs.current[index] = el)}
+                    ref={(el) => { slotRefs.current[index] = el; }}
                     className={`garland-slot ${placedItem ? "filled" : "empty"} ${isCorrect ? "correct-slot" : ""} ${wrongSlot === index ? "slot-reject" : ""}`}
                   >
                     {placedItem ? (
