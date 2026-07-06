@@ -23,10 +23,29 @@ function MapPage() {
   const [openLevel, setOpenLevel] = useState<Level | null>(null);
   const [mounted, setMounted] = useState(false);
   const [clock, setClock] = useState(() => new Date());
+  const [revealing, setRevealing] = useState(false);
 
   useEffect(() => {
     setProgress(loadProgress());
     setMounted(true);
+    // Coordinated reveal handoff from landing page whiteout.
+    try {
+      if (sessionStorage.getItem("la-reveal") === "1") {
+        sessionStorage.removeItem("la-reveal");
+        setRevealing(true);
+        const raf = requestAnimationFrame(() => {
+          const t = window.setTimeout(() => setRevealing(false), 1100);
+          (window as unknown as { __laRevealTimer?: number }).__laRevealTimer = t;
+        });
+        return () => {
+          cancelAnimationFrame(raf);
+          const t = (window as unknown as { __laRevealTimer?: number }).__laRevealTimer;
+          if (t) window.clearTimeout(t);
+        };
+      }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
