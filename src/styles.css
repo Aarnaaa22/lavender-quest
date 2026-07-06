@@ -1023,3 +1023,55 @@
   opacity: 0.6;
   pointer-events: none;
 }
+
+/* ===== SparkleField reusable component ===== */
+.sparkle-field-bg {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(216, 180, 254, 0.45), transparent 55%),
+    radial-gradient(circle at 80% 15%, rgba(251, 207, 232, 0.35), transparent 55%),
+    radial-gradient(circle at 50% 90%, rgba(196, 181, 253, 0.4), transparent 60%),
+    linear-gradient(160deg, #fdf4ff 0%, #f3e8ff 45%, #ede9fe 100%);
+}
+@keyframes sparkle-drift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(var(--sx), var(--sy)) rotate(180deg); }
+}
+@keyframes sparkle-pulse {
+  0%, 100% { opacity: 0.35; filter: brightness(0.9); }
+  50% { opacity: 1; filter: brightness(1.4); }
+}
+.sparkle-dot {
+  animation-name: sparkle-drift, sparkle-pulse;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+  will-change: transform, opacity;
+}
+@keyframes sparkle-orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.55; }
+  50% { transform: translate(20px, -30px) scale(1.15); opacity: 0.9; }
+}
+.sparkle-orb {
+  filter: blur(30px);
+  animation-name: sparkle-orb-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* ===== Map reveal (handoff from landing whiteout) ===== */
+@keyframes map-reveal-veil {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.map-reveal-veil {
+  background: radial-gradient(circle at center, rgba(255, 240, 253, 0.98), rgba(233, 213, 255, 0.92) 45%, rgba(196, 181, 253, 0.85) 100%);
+  animation: map-reveal-veil 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes map-reveal-content {
+  0% { opacity: 0; transform: scale(1.04); filter: blur(6px); }
+  60% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+.map-revealing > *:not(.map-reveal-veil) {
+  animation: map-reveal-content 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
