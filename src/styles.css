@@ -934,3 +934,92 @@
   80% { transform: translateX(4px); }
 }
 
+
+/* ===== Landing page magical intro ===== */
+@keyframes la-gather {
+  0% {
+    transform: translate(var(--tx), var(--ty)) scale(1);
+    opacity: 0;
+  }
+  25% { opacity: 1; }
+  100% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+}
+.la-gather {
+  animation: la-gather 2.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes la-burst {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% { opacity: 1; }
+  100% {
+    transform: translate(var(--bx), var(--by)) scale(1.4);
+    opacity: 0;
+  }
+}
+.la-burst {
+  animation: la-burst 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes la-whiteout {
+  0% { opacity: 0; }
+  60% { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+.la-whiteout {
+  background: radial-gradient(circle at center, rgba(255, 240, 253, 0.95), rgba(233, 213, 255, 0.85) 40%, rgba(196, 181, 253, 0.6) 100%);
+  animation: la-whiteout 1.05s ease-out forwards;
+}
+
+@keyframes la-title-reveal {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.4em;
+    filter: blur(14px) brightness(1.8);
+    transform: translateY(6px);
+  }
+  60% {
+    opacity: 1;
+    filter: blur(0) brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: normal;
+    filter: blur(0) brightness(1);
+    transform: translateY(0);
+  }
+}
+.la-title {
+  background: linear-gradient(120deg, #7c3aed 0%, #c084fc 40%, #f0abfc 65%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 40px rgba(192, 132, 252, 0.35);
+  font-family: var(--font-display);
+}
+.la-title-line {
+  display: block;
+  opacity: 0;
+  animation: la-title-reveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.9s;
+}
+
+@keyframes la-cta-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.45), 0 8px 30px -6px rgba(124, 58, 237, 0.5); }
+  50% { box-shadow: 0 0 0 12px rgba(192, 132, 252, 0), 0 12px 40px -6px rgba(124, 58, 237, 0.7); }
+}
+.la-cta {
+  animation: la-cta-glow 2.4s ease-in-out infinite;
+}
+.la-cta-glow {
+  background: linear-gradient(120deg, rgba(255,255,255,0.25), rgba(255,255,255,0));
+  opacity: 0.6;
+  pointer-events: none;
+}
