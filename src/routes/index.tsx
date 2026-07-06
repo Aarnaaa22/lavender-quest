@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { AmbientBackground } from "@/components/AmbientBackground";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { SparkleField } from "@/components/SparkleField";
 
 export const Route = createFileRoute("/")({
   head: () => ({
