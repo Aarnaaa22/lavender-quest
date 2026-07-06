@@ -23,10 +23,29 @@ function MapPage() {
   const [openLevel, setOpenLevel] = useState<Level | null>(null);
   const [mounted, setMounted] = useState(false);
   const [clock, setClock] = useState(() => new Date());
+  const [revealing, setRevealing] = useState(false);
 
   useEffect(() => {
     setProgress(loadProgress());
     setMounted(true);
+    // Coordinated reveal handoff from landing page whiteout.
+    try {
+      if (sessionStorage.getItem("la-reveal") === "1") {
+        sessionStorage.removeItem("la-reveal");
+        setRevealing(true);
+        const raf = requestAnimationFrame(() => {
+          const t = window.setTimeout(() => setRevealing(false), 1100);
+          (window as unknown as { __laRevealTimer?: number }).__laRevealTimer = t;
+        });
+        return () => {
+          cancelAnimationFrame(raf);
+          const t = (window as unknown as { __laRevealTimer?: number }).__laRevealTimer;
+          if (t) window.clearTimeout(t);
+        };
+      }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
@@ -97,8 +116,11 @@ function MapPage() {
   }
 
   return (
-    <main className="relative min-h-screen px-4 sm:px-8 py-8">
+    <main className={`relative min-h-screen px-4 sm:px-8 py-8 ${revealing ? "map-revealing" : "map-revealed"}`}>
       <AmbientBackground density={20} />
+      {revealing && (
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-[60] map-reveal-veil" />
+      )}
 
       <header className="relative z-10 max-w-6xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div className="flex items-center gap-3">

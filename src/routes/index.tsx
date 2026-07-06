@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { AmbientBackground } from "@/components/AmbientBackground";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { SparkleField } from "@/components/SparkleField";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,15 +56,40 @@ function Welcome() {
     [],
   );
 
+  // rAF-driven leaving timeline: burst + whiteout complete BEFORE navigation,
+  // then the map plays its own reveal (via sessionStorage flag).
+  const timelineRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (timelineRef.current) cancelAnimationFrame(timelineRef.current);
+  }, []);
+
   const handleStart = () => {
     if (phase === "leaving") return;
     setPhase("leaving");
-    setTimeout(() => navigate({ to: "/map" }), 1100);
+
+    const WHITEOUT_MS = 1050; // must match .la-whiteout animation duration
+    const HOLD_MS = 120;      // brief hold at full white before swap
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      if (elapsed >= WHITEOUT_MS + HOLD_MS) {
+        try {
+          sessionStorage.setItem("la-reveal", "1");
+        } catch {
+          /* ignore */
+        }
+        navigate({ to: "/map" });
+        return;
+      }
+      timelineRef.current = requestAnimationFrame(tick);
+    };
+    timelineRef.current = requestAnimationFrame(tick);
   };
 
   return (
     <main className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center px-6 py-12">
-      <AmbientBackground />
+      <SparkleField count={70} />
 
       {/* Intro gathering particles */}
       {phase === "intro" && (
