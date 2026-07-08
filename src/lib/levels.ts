@@ -17,7 +17,7 @@ export const LEVELS: Level[] = [
   { id: 5,  name: "Tide Cove",        game: "Wave Balance",    emoji: "🌊", x: 70, y: 78, description: "Balance on the tide as soft waves roll in." },
   { id: 6,  name: "Potion Hut",       game: "Tap the Odd One", emoji: "💜", x: 80, y: 62, description: "Spot the subtly different lavender item in each grid before time runs out." },
   { id: 7,  name: "Shell Bay",        game: "Shell Garland",   emoji: "🐚", x: 86, y: 44, description: "Recreate the seashell garland pattern using shells and charms." },
-  { id: 8,  name: "Firefly Cave",     game: "Firefly Maze",    emoji: "✨", x: 70, y: 30, description: "Follow the fireflies through a glowing cave maze." },
+  { id: 8,  name: "Sweet Tower",      game: "Balance Stack",   emoji: "🧁", x: 70, y: 30, description: "Stack dreamy lavender desserts as high as you can." },
   { id: 9,  name: "Cloud Bakery",     game: "Bakery Rush",     emoji: "🧁", x: 52, y: 22, description: "Serve cloud pastries to hungry sky bunnies." },
   { id: 10, name: "Moonlit Peak",     game: "Treasure",        emoji: "💜", x: 36, y: 30, description: "Unlock the final treasure at the moonlit peak." },
 ];

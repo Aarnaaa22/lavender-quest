@@ -32,7 +32,7 @@ const SHELL_ITEMS = GARLAND_ITEMS.filter((item) => item.type === "shell");
 const CHARM_ITEMS = GARLAND_ITEMS.filter((item) => item.type === "charm");
 const SLOT_MIN = 8;
 const SLOT_MAX = 10;
-const TIME_LIMIT = 22;
+const TIME_LIMIT = 60;
 const WRONG_PENALTY = 4;
 
 function randomBetween(min: number, max: number) {
