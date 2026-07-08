@@ -8,6 +8,7 @@ import BerryRush from "@/components/games/BerryRush";
 import LotusMaze from "@/components/games/LotusMaze";
 import ShellGarland from "@/components/games/ShellGarland";
 import ShapeShift from "@/components/games/ShapeShift";
+import BalanceStack from "@/components/games/BalanceStack";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
 
@@ -140,6 +141,19 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
     ],
     controls: ["Drag and drop items into slots"],
     goal: "Recreate the full garland pattern before the timer ends.",
+    onStart: () => {},
+  },
+  8: {
+    level: 8, title: "Balance Stack", emoji: "🧁",
+    tagline: "Timing & precision.",
+    rules: [
+      "A dessert block slides left and right above the tower.",
+      "Tap or press Space to drop it — perfect alignment keeps full width.",
+      "Misaligned pieces get cut; miss completely and it's game over.",
+      "Speed increases very gradually as the tower grows.",
+    ],
+    controls: ["Tap / click the play area", "Space or ↓ to drop"],
+    goal: "Stack as high as you can for the sweetest score.",
     onStart: () => {},
   },
 };
