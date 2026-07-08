@@ -300,6 +300,7 @@ function GamePage() {
     if (levelId === 5) return <LotusMaze levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 6) return <ShapeShift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 7) return <ShellGarland levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 8) return <BalanceStack levelId={levelId} onWin={onWin} onReturn={onReturn} />;
 
     return <ComingSoon levelName={level.name} game={level.game} />;
   })();
