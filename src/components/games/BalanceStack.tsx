@@ -108,7 +108,11 @@ export default function BalanceStack({
     const tick = () => {
       const c = currentRef.current;
       if (c) {
-        let nx = c.x + speedRef.current * dirRef.current;
+        // eased horizontal motion — slows near walls for a smoother pendulum feel
+        const travel = CANVAS_W - c.width;
+        const t = travel > 0 ? c.x / travel : 0.5; // 0..1
+        const ease = 0.35 + Math.sin(Math.PI * t) * 0.65; // slow at edges, fast in middle
+        let nx = c.x + speedRef.current * ease * dirRef.current;
         if (nx <= 0) {
           nx = 0;
           dirRef.current = 1;
