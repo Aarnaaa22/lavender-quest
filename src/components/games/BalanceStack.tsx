@@ -339,28 +339,56 @@ export default function BalanceStack({
                   height: BLOCK_H,
                   background: b.color,
                   boxShadow: "0 6px 18px rgba(120,70,180,0.25), inset 0 1px 0 rgba(255,255,255,0.6)",
-                  animation: i === stack.length - 1 ? "bs-land 260ms cubic-bezier(0.16,1,0.3,1)" : undefined,
+                  transformOrigin: "50% 100%",
+                  animation: i === stack.length - 1 ? "bs-land 460ms cubic-bezier(0.34,1.56,0.64,1)" : undefined,
                 }}
               >
                 <span className="text-lg opacity-80" style={{ filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.15))" }}>{b.emoji}</span>
               </div>
             ))}
 
-            {current && (
-              <div
-                className="absolute flex items-center justify-center rounded-xl"
-                style={{
-                  left: current.x,
-                  top: current.y,
-                  width: current.width,
-                  height: BLOCK_H,
-                  background: current.color,
-                  boxShadow: "0 8px 22px rgba(180,120,240,0.45), inset 0 1px 0 rgba(255,255,255,0.7)",
-                }}
-              >
-                <span className="text-lg opacity-80">{current.emoji}</span>
-              </div>
-            )}
+            {current && (() => {
+              const top = stack[stack.length - 1];
+              const leftO = Math.max(current.x, top.x);
+              const rightO = Math.min(current.x + current.width, top.x + top.width);
+              const overlap = Math.max(0, rightO - leftO);
+              const aligned = overlap / current.width; // 0..1
+              const shadowW = Math.max(24, current.width * (0.55 + aligned * 0.35));
+              const shadowX = current.x + current.width / 2 - shadowW / 2;
+              const shadowOpacity = 0.15 + aligned * 0.25;
+              return (
+                <>
+                  {/* alignment shadow cast on top block */}
+                  <div
+                    aria-hidden
+                    className="absolute rounded-[50%] pointer-events-none"
+                    style={{
+                      left: shadowX,
+                      top: top.y + 4,
+                      width: shadowW,
+                      height: 10,
+                      background: `radial-gradient(ellipse at center, rgba(60,20,100,${shadowOpacity}) 0%, rgba(60,20,100,0) 70%)`,
+                      filter: "blur(2px)",
+                      transition: "opacity 120ms linear",
+                    }}
+                  />
+                  <div
+                    className="absolute flex items-center justify-center rounded-xl"
+                    style={{
+                      left: current.x,
+                      top: current.y,
+                      width: current.width,
+                      height: BLOCK_H,
+                      background: current.color,
+                      boxShadow: "0 8px 22px rgba(180,120,240,0.45), inset 0 1px 0 rgba(255,255,255,0.7)",
+                      animation: "bs-hover 2.4s ease-in-out infinite",
+                    }}
+                  >
+                    <span className="text-lg opacity-80">{current.emoji}</span>
+                  </div>
+                </>
+              );
+            })()}
 
             {pieces.map((p) => (
               <div
@@ -379,7 +407,18 @@ export default function BalanceStack({
             ))}
           </div>
 
-          <style>{`@keyframes bs-land {0%{transform:scaleY(0.7) translateY(-4px);}60%{transform:scaleY(1.08);}100%{transform:scaleY(1);}}`}</style>
+          <style>{`
+            @keyframes bs-land {
+              0% { transform: scaleY(0.55) scaleX(1.08) translateY(-6px); }
+              45% { transform: scaleY(1.12) scaleX(0.94); }
+              70% { transform: scaleY(0.96) scaleX(1.02); }
+              100% { transform: scaleY(1) scaleX(1); }
+            }
+            @keyframes bs-hover {
+              0%,100% { transform: translateY(0); }
+              50% { transform: translateY(-2px); }
+            }
+          `}</style>
         </div>
       </div>
 
