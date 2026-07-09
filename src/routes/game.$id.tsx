@@ -293,7 +293,7 @@ function GamePage() {
       );
     }
 
-    
+    if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 2) return <PetalMeadow levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 3) return <ButterflyDrift levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 4) return <BerryRush levelId={levelId} onWin={onWin} onReturn={onReturn} />;
