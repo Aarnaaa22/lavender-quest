@@ -157,6 +157,25 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
     goal: "Stack as high as you can for the sweetest score.",
     onStart: () => {},
   },
+  10: {
+    level: 10, title: "Sweet Spiral", emoji: "💜",
+    tagline: "Helix jump through a candy tower.",
+    rules: [
+      "The candy ball bounces down a rotating spiral tower.",
+      "Drag left or right anywhere on the play area to spin the tower.",
+      "Guide the ball through gaps in each ring.",
+      "🍫 Dark chocolate slices end the run — avoid them.",
+      "Pink striped slices dissolve after one bounce.",
+      "Grab ⭐ stars on the rings for bonus points.",
+    ],
+    controls: [
+      "Drag to spin the tower",
+      "← / → arrow keys also spin",
+      "P or Esc to pause",
+    ],
+    goal: "Reach the bottom of the tower without hitting chocolate.",
+    onStart: () => {},
+  },
 };
 
 function GamePage() {
