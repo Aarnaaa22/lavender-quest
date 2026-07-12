@@ -9,6 +9,7 @@ import LotusMaze from "@/components/games/LotusMaze";
 import ShellGarland from "@/components/games/ShellGarland";
 import ShapeShift from "@/components/games/ShapeShift";
 import BalanceStack from "@/components/games/BalanceStack";
+import SweetSpiral from "@/components/games/SweetSpiral";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
 
