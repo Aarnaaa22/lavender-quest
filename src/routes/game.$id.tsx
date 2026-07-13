@@ -10,6 +10,7 @@ import ShellGarland from "@/components/games/ShellGarland";
 import ShapeShift from "@/components/games/ShapeShift";
 import BalanceStack from "@/components/games/BalanceStack";
 import SweetSpiral from "@/components/games/SweetSpiral";
+import HiddenHaven from "@/components/games/HiddenHaven";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
 
@@ -155,6 +156,23 @@ const INTROS: Record<number, Parameters<typeof GameIntro>[0]> = {
     ],
     controls: ["Tap / click the play area", "Space or ↓ to drop"],
     goal: "Stack as high as you can for the sweetest score.",
+    onStart: () => {},
+  },
+  9: {
+    level: 9, title: "Hidden Haven", emoji: "🎁",
+    tagline: "Explore the misty forest to find the hidden treasure chest.",
+    rules: [
+      "You wake up inside a magical lavender forest covered in soft glowing mist.",
+      "A treasure chest is hidden somewhere in the forest. Its location changes every game.",
+      "Explore freely to clear the mist. Visited paths stay revealed.",
+      "Look for natural clues: golden butterflies flying toward the chest, or sparkles in the fog.",
+      "As you get closer, you'll see a faint golden glow, and the forest will become brighter.",
+    ],
+    controls: [
+      "Arrow keys or WASD to move",
+      "Mobile: Hold on-screen directions or swipe to move",
+    ],
+    goal: "Find the hidden lavender treasure chest before the timer runs out.",
     onStart: () => {},
   },
   10: {
@@ -322,6 +340,7 @@ function GamePage() {
     if (levelId === 7) return <ShellGarland levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 8) return <BalanceStack levelId={levelId} onWin={onWin} onReturn={onReturn} />;
     if (levelId === 10) return <SweetSpiral levelId={levelId} onWin={onWin} onReturn={onReturn} />;
+    if (levelId === 9) return <HiddenHaven levelId={levelId} onWin={onWin} onReturn={onReturn} />;
 
     return <ComingSoon levelName={level.name} game={level.game} />;
   })();

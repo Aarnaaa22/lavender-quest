@@ -1075,3 +1075,36 @@
 .map-revealing > *:not(.map-reveal-veil) {
   animation: map-reveal-content 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ===== Dream Compass Game Custom Styles ===== */
+.flower-sway {
+  animation: flower-sway-anim 3.6s ease-in-out infinite alternate;
+}
+@keyframes flower-sway-anim {
+  0% { transform: rotate(-5deg); }
+  100% { transform: rotate(5deg); }
+}
+
+.mushroom-glow {
+  animation: mushroom-glow-anim 2.5s ease-in-out infinite alternate;
+}
+@keyframes mushroom-glow-anim {
+  0% { opacity: 0.8; filter: drop-shadow(0 0 1px rgba(185, 159, 252, 0.4)); }
+  100% { opacity: 1.0; filter: drop-shadow(0 0 8px rgba(185, 159, 252, 0.95)); }
+}
+
+.water-ripple {
+  animation: water-ripple-anim 4.2s ease-in-out infinite alternate;
+}
+@keyframes water-ripple-anim {
+  0% { stroke-dasharray: 2 10; stroke-dashoffset: 0; }
+  100% { stroke-dasharray: 8 4; stroke-dashoffset: 12; }
+}
+
+.crystal-float {
+  animation: crystal-float-anim 2.8s ease-in-out infinite alternate;
+}
+@keyframes crystal-float-anim {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-4px) rotate(15deg); }
+}
