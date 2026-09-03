@@ -5,9 +5,9 @@ import { getRandomLayout, type ParsedLayout } from "./HiddenHavenLayouts";
 const COLS = 24;
 const ROWS = 16;
 const TILE = 32;
-const SPEED = 4.8; // cells per second
-const TOTAL_TIME = 60;
-const VISION_R = 3.2; // cells radius for fog clearing
+const SPEED = 6.2; // cells per second
+const TOTAL_TIME = 90;
+const VISION_R = 4.4; // cells radius for fog clearing
 
 type Dir = "up" | "down" | "left" | "right";
 
@@ -48,6 +48,51 @@ interface Crystal {
   y: number;
 }
 
+
+const SOLID_CELLS = new Set([1, 2, 6, 7, 8, 9]);
+
+function reachableCells(lay: ParsedLayout) {
+  const seen = new Set<string>();
+  const queue: { x: number; y: number }[] = [lay.start];
+  seen.add(`${lay.start.x},${lay.start.y}`);
+  while (queue.length) {
+    const cur = queue.shift()!;
+    const neighbours = [
+      { x: cur.x + 1, y: cur.y },
+      { x: cur.x - 1, y: cur.y },
+      { x: cur.x, y: cur.y + 1 },
+      { x: cur.x, y: cur.y - 1 },
+    ];
+    for (const n of neighbours) {
+      if (n.x < 0 || n.y < 0 || n.x >= COLS || n.y >= ROWS) continue;
+      const key = `${n.x},${n.y}`;
+      if (seen.has(key)) continue;
+      if (SOLID_CELLS.has(lay.grid[n.y][n.x])) continue;
+      seen.add(key);
+      queue.push(n);
+    }
+  }
+  return seen;
+}
+
+/** Pick a layout plus a chest that is guaranteed reachable from the start. */
+function pickRound(): { layout: ParsedLayout; chest: { x: number; y: number } } {
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const lay = getRandomLayout();
+    const reach = reachableCells(lay);
+    const options = lay.candidateChests.filter((c) => reach.has(`${c.x},${c.y}`));
+    if (options.length) {
+      return { layout: lay, chest: options[Math.floor(Math.random() * options.length)] };
+    }
+  }
+  const lay = getRandomLayout();
+  const reach = [...reachableCells(lay)].map((k) => {
+    const [x, y] = k.split(",").map(Number);
+    return { x, y };
+  });
+  return { layout: lay, chest: reach[reach.length - 1] ?? lay.start };
+}
+
 export default function HiddenHaven({
   levelId,
   onWin,
@@ -57,12 +102,9 @@ export default function HiddenHaven({
   onWin: () => void;
   onReturn: () => void;
 }) {
-  const [layout, setLayout] = useState<ParsedLayout>(() => getRandomLayout());
-  const [chestPos, setChestPos] = useState<{ x: number; y: number }>(() => {
-    const lay = getRandomLayout();
-    const idx = Math.floor(Math.random() * lay.candidateChests.length);
-    return lay.candidateChests[idx] || { x: 22, y: 14 };
-  });
+  const [round, setRound] = useState(pickRound);
+  const layout = round.layout;
+  const chestPos = round.chest;
 
   const [crystals, setCrystals] = useState<Crystal[]>([]);
   const [collectedCrystals, setCollectedCrystals] = useState<Set<string>>(new Set());
@@ -384,7 +426,7 @@ export default function HiddenHaven({
       crystals.forEach((cry) => {
         if (!collectedCrystals.has(cry.id)) {
           const dist = Math.hypot(p.x - (cry.x + 0.5), p.y - (cry.y + 0.5));
-          if (dist < 0.65) {
+          if (dist < 0.8) {
             setCollectedCrystals((prev) => {
               const next = new Set(prev);
               next.add(cry.id);
@@ -417,7 +459,7 @@ export default function HiddenHaven({
       const cx = chestPos.x + 0.5;
       const cy = chestPos.y + 0.5;
       const distToChest = Math.hypot(p.x - cx, p.y - cy);
-      if (distToChest < 0.65) {
+      if (distToChest < 0.95) {
         setStatus("discovering");
         // Spawn win particle burst
         for (let i = 0; i < 40; i++) {
@@ -441,7 +483,7 @@ export default function HiddenHaven({
       // 6. UPDATE ENTITIES AND HINTS
 
       // A. Golden sparkles in the fog (Hint)
-      if (Math.random() < 0.05) {
+      if (Math.random() < 0.14) {
         const angle = Math.random() * Math.PI * 2;
         // Sparkle spawns relative to chest
         const radius = 1 + Math.random() * 4.5;
@@ -470,13 +512,13 @@ export default function HiddenHaven({
 
       // B. Golden butterflies indicator (Hint)
       butterflyTimerRef.current += dt;
-      if (butterflyTimerRef.current > 7.0) {
+      if (butterflyTimerRef.current > 3.0) {
         butterflyTimerRef.current = 0;
         // Vector pointing to chest
         const dx = cx - p.x;
         const dy = cy - p.y;
         const len = Math.hypot(dx, dy);
-        if (len > 3.0) { // only guide if player is not already on top of it
+        if (len > 1.5) { // only guide if player is not already on top of it
           const bvx = (dx / len) * 1.5;
           const bvy = (dy / len) * 1.5;
           for (let i = 0; i < 3; i++) {
@@ -600,10 +642,7 @@ export default function HiddenHaven({
 
   // Reset/Restart game
   const handleReset = () => {
-    const lay = getRandomLayout();
-    const idx = Math.floor(Math.random() * lay.candidateChests.length);
-    setLayout(lay);
-    setChestPos(lay.candidateChests[idx] || { x: 22, y: 14 });
+    setRound(pickRound());
   };
 
   // Touch swipe tracking
@@ -919,7 +958,7 @@ export default function HiddenHaven({
                       /* Open chest SVG */
                       <g>
                         {/* Light rays ray grad */}
-                        <path d="M 16,15 L -6,-15 L 38,-15 Z" fill="url(#ray-grad)" opacity={0.6 + Math.sin(tick() * 0.1) * 0.15} />
+                        <path d="M 16,15 L -6,-15 L 38,-15 Z" fill="url(#ray-grad)" opacity={0.6 + Math.sin(Date.now() * 0.006) * 0.15} />
                         {/* Chest base */}
                         <rect x="4" y="16" width="24" height="12" fill="#9f85d1" rx="2.5" stroke="#ffe57f" strokeWidth={1.8} />
                         {/* Inside gold treasures core */}
@@ -1007,7 +1046,7 @@ export default function HiddenHaven({
                   key={s.id}
                   cx={s.x * TILE}
                   cy={s.y * TILE}
-                  r={s.size * (s.isGoldenSparkle ? 1 + Math.sin(tick() * 0.15) * 0.2 : 1)}
+                  r={s.size * (s.isGoldenSparkle ? 1 + Math.sin(Date.now() * 0.009) * 0.2 : 1)}
                   fill={s.color}
                   opacity={s.alpha}
                 />
