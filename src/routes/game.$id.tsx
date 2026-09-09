@@ -317,18 +317,7 @@ function GamePage() {
     }
 
     if (isFinished) {
-      return (
-        <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center rounded-[2rem] bg-white/80 p-8 text-center shadow-glow">
-          <div className="mb-4 text-5xl">🌙</div>
-          <h2 className="text-3xl font-bold text-gradient">Adventure complete!</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            You reached the end of the lavender quest. Your credits and progress are safely saved for your next visit.
-          </p>
-          <Link to="/map" className="mt-6 inline-block rounded-full bg-button-grad px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow">
-            Return to the map
-          </Link>
-        </div>
-      );
+      return <Celebration credits={credits} />;
     }
 
     if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;
