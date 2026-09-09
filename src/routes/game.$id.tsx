@@ -13,6 +13,7 @@ import SweetSpiral from "@/components/games/SweetSpiral";
 import HiddenHaven from "@/components/games/HiddenHaven";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
+import { Celebration } from "@/components/Celebration";
 
 type PlaneFlight = {
   from: { x: number; y: number };
@@ -312,23 +313,12 @@ function GamePage() {
   const skipHelperText = credits < 5 ? "Not enough credits to skip" : "Skip this level for -5 credits";
 
   const pageContent = (() => {
-    if (!started && intro) {
-      return <GameIntro {...intro} onStart={() => setStarted(true)} />;
+    if (isFinished) {
+      return <Celebration credits={credits} />;
     }
 
-    if (isFinished) {
-      return (
-        <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center rounded-[2rem] bg-white/80 p-8 text-center shadow-glow">
-          <div className="mb-4 text-5xl">🌙</div>
-          <h2 className="text-3xl font-bold text-gradient">Adventure complete!</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            You reached the end of the lavender quest. Your credits and progress are safely saved for your next visit.
-          </p>
-          <Link to="/map" className="mt-6 inline-block rounded-full bg-button-grad px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow">
-            Return to the map
-          </Link>
-        </div>
-      );
+    if (!started && intro) {
+      return <GameIntro {...intro} onStart={() => setStarted(true)} />;
     }
 
     if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;

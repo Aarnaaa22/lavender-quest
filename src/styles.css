@@ -1108,3 +1108,22 @@
   0% { transform: translateY(0px) rotate(0deg); }
   100% { transform: translateY(-4px) rotate(15deg); }
 }
+
+/* Celebration finale */
+@keyframes rise-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-115vh) rotate(25deg); opacity: 0; }
+}
+.animate-rise-float {
+  animation: rise-float 9s linear infinite;
+}
+@keyframes badge-pop {
+  0% { opacity: 0; transform: scale(0.3); }
+  70% { transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-badge-pop {
+  animation: badge-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
