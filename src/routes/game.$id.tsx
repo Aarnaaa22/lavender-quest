@@ -313,12 +313,12 @@ function GamePage() {
   const skipHelperText = credits < 5 ? "Not enough credits to skip" : "Skip this level for -5 credits";
 
   const pageContent = (() => {
-    if (!started && intro) {
-      return <GameIntro {...intro} onStart={() => setStarted(true)} />;
-    }
-
     if (isFinished) {
       return <Celebration credits={credits} />;
+    }
+
+    if (!started && intro) {
+      return <GameIntro {...intro} onStart={() => setStarted(true)} />;
     }
 
     if (levelId === 1) return <BubbleBeach levelId={levelId} onWin={onWin} onReturn={onReturn} />;
