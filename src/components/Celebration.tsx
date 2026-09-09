@@ -162,7 +162,7 @@ export function Celebration({ credits }: { credits: number }) {
         {floating.map((f) => (
           <span
             key={f.id}
-            className="absolute animate-float-slow"
+            className="absolute animate-rise-float"
             style={{
               left: `${f.left}%`,
               top: "100%",
@@ -221,8 +221,8 @@ export function Celebration({ credits }: { credits: number }) {
             <span
               key={i}
               title={b.name}
-              className="flex size-11 items-center justify-center rounded-full bg-white/15 border border-white/25 text-xl backdrop-blur-md animate-scale-in"
-              style={{ animationDelay: `${0.4 + i * 0.1}s`, animationFillMode: "backwards" }}
+              className="flex size-11 items-center justify-center rounded-full bg-white/15 border border-white/25 text-xl backdrop-blur-md animate-badge-pop"
+              style={{ animationDelay: `${0.4 + i * 0.1}s` }}
             >
               {b.emoji}
             </span>

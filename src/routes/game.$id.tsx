@@ -13,6 +13,7 @@ import SweetSpiral from "@/components/games/SweetSpiral";
 import HiddenHaven from "@/components/games/HiddenHaven";
 import GameIntro from "@/components/games/GameIntro";
 import { GameHeader } from "@/components/GameHeader";
+import { Celebration } from "@/components/Celebration";
 
 type PlaneFlight = {
   from: { x: number; y: number };
